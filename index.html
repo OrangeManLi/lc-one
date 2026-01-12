@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>科技博客 - Tech Blog</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0e27;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .content {
+            position: relative;
+            z-index: 2;
+        }
+
+        header {
+            text-align: center;
+            padding: 100px 20px 50px;
+            margin: 0 auto;
+            max-width: 1200px;
+            background: transparent;
+        }
+
+        h1 {
+            font-size: 3.5em;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #00ffff, #00ff88, #0088ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: glow 3s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.3); }
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            color: #00ffff;
+            margin-bottom: 10px;
+        }
+
+        .description {
+            color: #a0a0a0;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .blog-section {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 420px;
+            max-height: 65vh;
+            background: rgba(20, 30, 60, 0.95);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 0;
+            transition: all 0.5s ease;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            z-index: 10;
+        }
+
+        .blog-section.collapsed {
+            padding: 15px 20px;
+            max-height: 60px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            margin-bottom: 20px;
+            user-select: none;
+        }
+
+        .section-header h2 {
+            color: #00ffff;
+            font-size: 1.3em;
+            margin: 0;
+        }
+
+        .toggle-btn {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(45deg, #00ffff, #0088ff);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3em;
+            color: #0a0e27;
+            transition: transform 0.3s;
+            font-weight: bold;
+        }
+
+        .toggle-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+
+        .blog-content {
+            max-height: calc(65vh - 100px);
+            overflow-y: auto;
+            overflow-x: hidden;
+            transition: max-height 0.5s ease, opacity 0.5s ease;
+            opacity: 1;
+            padding-right: 10px;
+        }
+
+        .blog-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .blog-content::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 3px;
+        }
+
+        .blog-content::-webkit-scrollbar-thumb {
+            background: rgba(0, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        .blog-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 255, 255, 0.5);
+        }
+
+        .blog-content.hidden {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+
+        .blog-post {
+            margin-bottom: 25px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+        }
+
+        .blog-post:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .blog-post h2 {
+            color: #00ffff;
+            margin-bottom: 8px;
+            font-size: 1.3em;
+        }
+
+        .post-meta {
+            color: #00ff88;
+            font-size: 0.8em;
+            margin-bottom: 12px;
+        }
+
+        .blog-post p {
+            line-height: 1.6;
+            color: #d0d0d0;
+            margin-bottom: 12px;
+            font-size: 0.9em;
+        }
+
+        .read-more {
+            display: inline-block;
+            padding: 8px 20px;
+            background: linear-gradient(45deg, #00ffff, #0088ff);
+            color: #0a0e27;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 0.85em;
+            transition: transform 0.3s;
+        }
+
+        .read-more:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+
+        .tech-info {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            font-size: 0.9em;
+            z-index: 3;
+        }
+
+        .tech-info div {
+            margin: 5px 0;
+            color: #00ffff;
+        }
+
+        footer {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            padding: 10px 20px;
+            background: rgba(10, 14, 39, 0.7);
+            border-radius: 20px;
+            font-size: 0.85em;
+            z-index: 2;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5em;
+            }
+
+            .blog-section {
+                bottom: 15px;
+                right: 15px;
+                left: 15px;
+                width: auto;
+                max-height: 50vh;
+            }
+
+            .tech-info {
+                font-size: 0.8em;
+                padding: 10px;
+            }
+
+            footer {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+
+    <div class="content">
+        <header>
+            <h1>科技前沿博客</h1>
+            <p class="subtitle">探索未来 | 拥抱科技</p>
+        </header>
+
+        <div class="blog-section collapsed" id="blogSection">
+            <div class="section-header" onclick="toggleBlog()">
+                <h2>📝 博客文章</h2>
+                <div class="toggle-btn" id="toggleBtn">+</div>
+            </div>
+            <div class="blog-content hidden" id="blogContent">
+                <div class="blog-post">
+                    <h2>Three.js 与现代Web 3D技术</h2>
+                    <p class="post-meta">2025年1月10日 | 技术分享</p>
+                    <p>Three.js 作为最流行的WebGL库之一，让在浏览器中创建复杂的3D场景变得简单。本文将探讨如何使用Three.js创建令人印象深刻的视觉效果，包括粒子系统、着色器编程和性能优化技巧。</p>
+                    <p>通过合理使用几何体、材质和光照，我们可以创建出既美观又高效的3D体验。本站背景中的人物模型就是使用Three.js技术实现的一个例子。</p>
+                    <a href="#" class="read-more">阅读全文</a>
+                </div>
+
+                <div class="blog-post">
+                    <h2>AI时代的Web开发</h2>
+                    <p class="post-meta">2025年1月8日 | 行业观察</p>
+                    <p>人工智能正在深刻改变Web开发的方式。从智能代码补全到自动化测试，AI工具正在提高开发者的生产力。但这并不意味着开发者会被取代，相反，我们需要学习如何更好地与AI协作。</p>
+                    <p>未来的Web应用将更加智能化、个性化。作为开发者，我们需要掌握AI集成技术，为用户创造更好的体验。</p>
+                    <a href="#" class="read-more">阅读全文</a>
+                </div>
+
+                <div class="blog-post">
+                    <h2>响应式设计的新思路</h2>
+                    <p class="post-meta">2025年1月5日 | 设计理念</p>
+                    <p>随着设备类型的不断增加，传统的响应式设计方法已经不够用了。我们需要考虑更多的因素：用户的网络状况、设备性能、使用场景等。</p>
+                    <p>Container Queries、CSS Grid和现代CSS特性为我们提供了更灵活的布局方案。结合性能监控和自适应加载策略，我们可以为所有用户提供最佳体验。</p>
+                    <a href="#" class="read-more">阅读全文</a>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>&copy; 2025 科技前沿博客 | 使用 Three.js 构建</p>
+        </footer>
+    </div>
+
+    <div class="tech-info">
+        <div>FPS: <span id="fps">60</span></div>
+        <div>粒子数: <span id="particles">5000</span></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // 博客展开/收起功能
+        function toggleBlog() {
+            const section = document.getElementById('blogSection');
+            const content = document.getElementById('blogContent');
+            const btn = document.getElementById('toggleBtn');
+            
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                section.classList.remove('collapsed');
+                btn.textContent = '−';
+            } else {
+                content.classList.add('hidden');
+                section.classList.add('collapsed');
+                btn.textContent = '+';
+            }
+        }
+
+        // 场景设置
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        // 创建小熊模型
+        const bearGroup = new THREE.Group();
+
+        // 小熊的颜色
+        const bearPink = 0xff69b4;
+        const bearBeige = 0xffd7a8;
+        const bearDarkPink = 0x8b1a5a;
+
+        // 声明在动画中需要用到的变量
+        let head, body;
+
+        // 创建材质
+        const createBearMaterial = (color, emissive = color, intensity = 0.3) => {
+            return new THREE.MeshPhongMaterial({
+                color: color,
+                emissive: emissive,
+                emissiveIntensity: intensity,
+                shininess: 30
+            });
+        };
+
+        const createWireMaterial = (color) => {
+            return new THREE.MeshPhongMaterial({
+                color: color,
+                emissive: color,
+                emissiveIntensity: 0.4,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.3
+            });
+        };
+
+        // 头部 - 圆润的球体
+        const headGeometry = new THREE.SphereGeometry(1.2, 32, 32);
+        headGeometry.scale(1, 0.9, 1);
+        head = new THREE.Mesh(headGeometry, createBearMaterial(bearPink));
+        head.position.y = 3.5;
+        bearGroup.add(head);
+
+        // 头部线框效果
+        const headWire = new THREE.Mesh(headGeometry.clone(), createWireMaterial(0x00ffff));
+        head.add(headWire);
+
+        // 左耳
+        const earGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+        const leftEar = new THREE.Mesh(earGeometry, createBearMaterial(bearPink));
+        leftEar.position.set(-0.8, 4.2, -0.2);
+        bearGroup.add(leftEar);
+
+        // 左耳内部（米色）
+        const innerEarGeometry = new THREE.SphereGeometry(0.25, 16, 16);
+        const leftInnerEar = new THREE.Mesh(innerEarGeometry, createBearMaterial(bearBeige));
+        leftInnerEar.position.set(-0.8, 4.2, 0);
+        bearGroup.add(leftInnerEar);
+
+        // 右耳
+        const rightEar = new THREE.Mesh(earGeometry, createBearMaterial(bearPink));
+        rightEar.position.set(0.8, 4.2, -0.2);
+        bearGroup.add(rightEar);
+
+        // 右耳内部
+        const rightInnerEar = new THREE.Mesh(innerEarGeometry, createBearMaterial(bearBeige));
+        rightInnerEar.position.set(0.8, 4.2, 0);
+        bearGroup.add(rightInnerEar);
+
+        // 面部（米色）
+        const faceGeometry = new THREE.SphereGeometry(0.9, 32, 32);
+        faceGeometry.scale(0.95, 0.85, 0.3);
+        const face = new THREE.Mesh(faceGeometry, createBearMaterial(bearBeige));
+        face.position.set(0, 3.3, 0.9);
+        bearGroup.add(face);
+
+        // 眼睛
+        const eyeGeometry = new THREE.SphereGeometry(0.15, 16, 16);
+        const eyeMaterial = createBearMaterial(0xffffff, 0xffffff, 0.5);
+        
+        const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        leftEye.position.set(-0.35, 3.7, 1.05);
+        bearGroup.add(leftEye);
+
+        const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        rightEye.position.set(0.35, 3.7, 1.05);
+        bearGroup.add(rightEye);
+
+        // 眼珠
+        const pupilGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+        const pupilMaterial = createBearMaterial(0x000000, 0x000000, 0.2);
+        
+        const leftPupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
+        leftPupil.position.set(-0.35, 3.7, 1.15);
+        bearGroup.add(leftPupil);
+
+        const rightPupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
+        rightPupil.position.set(0.35, 3.7, 1.15);
+        bearGroup.add(rightPupil);
+
+        // 眼白高光
+        const highlightGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+        const highlightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        
+        const leftHighlight = new THREE.Mesh(highlightGeometry, highlightMaterial);
+        leftHighlight.position.set(-0.32, 3.75, 1.2);
+        bearGroup.add(leftHighlight);
+
+        const rightHighlight = new THREE.Mesh(highlightGeometry, highlightMaterial);
+        rightHighlight.position.set(0.38, 3.75, 1.2);
+        bearGroup.add(rightHighlight);
+
+        // 眉毛
+        const eyebrowGeometry = new THREE.BoxGeometry(0.3, 0.08, 0.08);
+        const eyebrowMaterial = createBearMaterial(bearDarkPink);
+        
+        const leftEyebrow = new THREE.Mesh(eyebrowGeometry, eyebrowMaterial);
+        leftEyebrow.position.set(-0.35, 3.95, 1.1);
+        leftEyebrow.rotation.z = -0.2;
+        bearGroup.add(leftEyebrow);
+
+        const rightEyebrow = new THREE.Mesh(eyebrowGeometry, eyebrowMaterial);
+        rightEyebrow.position.set(0.35, 3.95, 1.1);
+        rightEyebrow.rotation.z = 0.2;
+        bearGroup.add(rightEyebrow);
+
+        // 鼻子
+        const noseGeometry = new THREE.SphereGeometry(0.35, 16, 16);
+        noseGeometry.scale(0.8, 0.7, 0.6);
+        const nose = new THREE.Mesh(noseGeometry, createBearMaterial(bearDarkPink));
+        nose.position.set(0, 3.2, 1.15);
+        bearGroup.add(nose);
+
+        // 嘴巴（不开心的表情）
+        const mouthCurve = new THREE.Shape();
+        mouthCurve.moveTo(-0.25, 0);
+        mouthCurve.quadraticCurveTo(0, -0.15, 0.25, 0);
+        const mouthGeometry = new THREE.ShapeGeometry(mouthCurve);
+        const mouthMaterial = new THREE.MeshBasicMaterial({ color: bearDarkPink, side: THREE.DoubleSide });
+        const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
+        mouth.position.set(0, 2.85, 1.1);
+        mouth.rotation.x = Math.PI;
+        bearGroup.add(mouth);
+
+        // 身体
+        const bodyGeometry = new THREE.SphereGeometry(1.3, 32, 32);
+        bodyGeometry.scale(1, 1.2, 0.85);
+        body = new THREE.Mesh(bodyGeometry, createBearMaterial(bearPink));
+        body.position.y = 1.5;
+        bearGroup.add(body);
+
+        // 身体线框
+        const bodyWire = new THREE.Mesh(bodyGeometry.clone(), createWireMaterial(0x00ff88));
+        body.add(bodyWire);
+
+        // 肚子（米色）
+        const bellyGeometry = new THREE.SphereGeometry(0.9, 32, 32);
+        bellyGeometry.scale(0.9, 1, 0.3);
+        const belly = new THREE.Mesh(bellyGeometry, createBearMaterial(bearBeige));
+        belly.position.set(0, 1.5, 0.95);
+        bearGroup.add(belly);
+
+        // 左臂（上臂）
+        const armGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.8, 12);
+        const leftUpperArm = new THREE.Mesh(armGeometry, createBearMaterial(bearPink));
+        leftUpperArm.position.set(-1.2, 2.2, 0);
+        leftUpperArm.rotation.z = 0.4;
+        bearGroup.add(leftUpperArm);
+
+        // 右臂（上臂）
+        const rightUpperArm = new THREE.Mesh(armGeometry, createBearMaterial(bearPink));
+        rightUpperArm.position.set(1.2, 2.2, 0);
+        rightUpperArm.rotation.z = -0.4;
+        bearGroup.add(rightUpperArm);
+
+        // 左前臂
+        const forearmGeometry = new THREE.CylinderGeometry(0.28, 0.28, 0.7, 12);
+        const leftForearm = new THREE.Mesh(forearmGeometry, createBearMaterial(bearPink));
+        leftForearm.position.set(-1.6, 1.3, 0);
+        leftForearm.rotation.z = 0.2;
+        bearGroup.add(leftForearm);
+
+        // 右前臂
+        const rightForearm = new THREE.Mesh(forearmGeometry, createBearMaterial(bearPink));
+        rightForearm.position.set(1.6, 1.3, 0);
+        rightForearm.rotation.z = -0.2;
+        bearGroup.add(rightForearm);
+
+        // 左手掌
+        const handGeometry = new THREE.SphereGeometry(0.35, 16, 16);
+        const leftHand = new THREE.Mesh(handGeometry, createBearMaterial(bearPink));
+        leftHand.position.set(-1.8, 0.6, 0);
+        bearGroup.add(leftHand);
+
+        // 右手掌
+        const rightHand = new THREE.Mesh(handGeometry, createBearMaterial(bearPink));
+        rightHand.position.set(1.8, 0.6, 0);
+        bearGroup.add(rightHand);
+
+        // 左腿
+        const legGeometry = new THREE.CylinderGeometry(0.35, 0.35, 1, 12);
+        const leftLeg = new THREE.Mesh(legGeometry, createBearMaterial(bearPink));
+        leftLeg.position.set(-0.5, 0, 0);
+        bearGroup.add(leftLeg);
+
+        // 右腿
+        const rightLeg = new THREE.Mesh(legGeometry, createBearMaterial(bearPink));
+        rightLeg.position.set(0.5, 0, 0);
+        bearGroup.add(rightLeg);
+
+        // 左脚
+        const footGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+        footGeometry.scale(0.8, 0.6, 1.2);
+        const leftFoot = new THREE.Mesh(footGeometry, createBearMaterial(bearPink));
+        leftFoot.position.set(-0.5, -0.6, 0.2);
+        bearGroup.add(leftFoot);
+
+        // 左脚掌（米色）
+        const footPadGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+        footPadGeometry.scale(0.8, 0.5, 0.8);
+        const leftFootPad = new THREE.Mesh(footPadGeometry, createBearMaterial(bearBeige));
+        leftFootPad.position.set(-0.5, -0.7, 0.4);
+        bearGroup.add(leftFootPad);
+
+        // 右脚
+        const rightFoot = new THREE.Mesh(footGeometry, createBearMaterial(bearPink));
+        rightFoot.position.set(0.5, -0.6, 0.2);
+        bearGroup.add(rightFoot);
+
+        // 右脚掌
+        const rightFootPad = new THREE.Mesh(footPadGeometry, createBearMaterial(bearBeige));
+        rightFootPad.position.set(0.5, -0.7, 0.4);
+        bearGroup.add(rightFootPad);
+
+        scene.add(bearGroup);
+        bearGroup.position.set(-5, 0, 0);
+        
+        // 存储关节引用以便动画
+        const joints = {
+            leftUpperArm, rightUpperArm,
+            leftForearm, rightForearm,
+            leftHand, rightHand,
+            leftLeg, rightLeg,
+            leftEar, rightEar,
+            leftPupil, rightPupil
+        };
+
+        // 粒子系统
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particlesCount = 5000;
+        const posArray = new Float32Array(particlesCount * 3);
+        const colorArray = new Float32Array(particlesCount * 3);
+
+        for (let i = 0; i < particlesCount * 3; i += 3) {
+            posArray[i] = (Math.random() - 0.5) * 50;
+            posArray[i + 1] = (Math.random() - 0.5) * 50;
+            posArray[i + 2] = (Math.random() - 0.5) * 50;
+
+            const colorChoice = Math.random();
+            if (colorChoice < 0.33) {
+                colorArray[i] = 0;
+                colorArray[i + 1] = 1;
+                colorArray[i + 2] = 1;
+            } else if (colorChoice < 0.66) {
+                colorArray[i] = 0;
+                colorArray[i + 1] = 1;
+                colorArray[i + 2] = 0.5;
+            } else {
+                colorArray[i] = 0;
+                colorArray[i + 1] = 0.5;
+                colorArray[i + 2] = 1;
+            }
+        }
+
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colorArray, 3));
+
+        const particlesMaterial = new THREE.PointsMaterial({
+            size: 0.05,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending
+        });
+
+        const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particlesMesh);
+
+        // 光照
+        const ambientLight = new THREE.AmbientLight(0x404040, 2);
+        scene.add(ambientLight);
+
+        const pointLight1 = new THREE.PointLight(0x00ffff, 2, 50);
+        pointLight1.position.set(10, 10, 10);
+        scene.add(pointLight1);
+
+        const pointLight2 = new THREE.PointLight(0x00ff88, 2, 50);
+        pointLight2.position.set(-10, -10, 10);
+        scene.add(pointLight2);
+
+        camera.position.z = 12;
+        camera.position.x = -2;
+        camera.position.y = 2;
+
+        // 鼠标交互
+        let mouseX = 0;
+        let mouseY = 0;
+        let targetRotationY = 0;
+        let targetRotationX = 0;
+        let isMouseOverHuman = false;
+        let mouseClickEffect = 0;
+
+        // 鼠标移动 - 小熊会"看向"鼠标
+        document.addEventListener('mousemove', (event) => {
+            mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+            mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            // 计算小熊应该看向的方向
+            const bearScreenPos = bearGroup.position.clone();
+            bearScreenPos.project(camera);
+            
+            const dx = mouseX - bearScreenPos.x;
+            const dy = mouseY - bearScreenPos.y;
+            
+            targetRotationY = dx * 0.5;
+            targetRotationX = dy * 0.3;
+
+            // 检测鼠标是否在小熊上方
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), camera);
+            const intersects = raycaster.intersectObjects(bearGroup.children, true);
+            isMouseOverHuman = intersects.length > 0;
+
+            if (isMouseOverHuman) {
+                document.body.style.cursor = 'pointer';
+            } else {
+                document.body.style.cursor = 'default';
+            }
+        });
+
+        // 鼠标点击 - 小熊会"挥手"
+        document.addEventListener('click', (event) => {
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2(
+                (event.clientX / window.innerWidth) * 2 - 1,
+                -(event.clientY / window.innerHeight) * 2 + 1
+            );
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(bearGroup.children, true);
+            
+            if (intersects.length > 0) {
+                mouseClickEffect = 1;
+                
+                // 创建点击波纹效果
+                const rippleGeometry = new THREE.RingGeometry(0.5, 0.7, 32);
+                const rippleMaterial = new THREE.MeshBasicMaterial({
+                    color: 0xff69b4,
+                    transparent: true,
+                    opacity: 0.8,
+                    side: THREE.DoubleSide
+                });
+                const ripple = new THREE.Mesh(rippleGeometry, rippleMaterial);
+                ripple.position.copy(intersects[0].point);
+                ripple.lookAt(camera.position);
+                scene.add(ripple);
+                
+                // 波纹动画
+                let rippleScale = 1;
+                const rippleInterval = setInterval(() => {
+                    rippleScale += 0.1;
+                    ripple.scale.set(rippleScale, rippleScale, 1);
+                    rippleMaterial.opacity -= 0.05;
+                    if (rippleMaterial.opacity <= 0) {
+                        scene.remove(ripple);
+                        clearInterval(rippleInterval);
+                    }
+                }, 30);
+            }
+        });
+
+        // FPS计数器
+        let lastTime = Date.now();
+        let frames = 0;
+
+        // 动画循环
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = Date.now() * 0.001;
+
+            // 小熊头部跟随鼠标（平滑过渡）
+            head.rotation.y += (targetRotationY * 0.8 - head.rotation.y) * 0.05;
+            head.rotation.x += (targetRotationX * 0.5 - head.rotation.x) * 0.05;
+
+            // 眼珠跟随头部转动
+            joints.leftPupil.position.x = -0.35 + targetRotationY * 0.1;
+            joints.rightPupil.position.x = 0.35 + targetRotationY * 0.1;
+            joints.leftPupil.position.y = 3.7 - targetRotationX * 0.1;
+            joints.rightPupil.position.y = 3.7 - targetRotationX * 0.1;
+
+            // 耳朵轻微摆动
+            joints.leftEar.rotation.z = Math.sin(time * 2) * 0.1;
+            joints.rightEar.rotation.z = -Math.sin(time * 2) * 0.1;
+
+            // 鼠标悬停时的反应
+            if (isMouseOverHuman) {
+                // 整体轻微放大
+                bearGroup.scale.x += (1.15 - bearGroup.scale.x) * 0.1;
+                bearGroup.scale.y += (1.15 - bearGroup.scale.y) * 0.1;
+                bearGroup.scale.z += (1.15 - bearGroup.scale.z) * 0.1;
+                
+                // 发光增强
+                head.material.emissiveIntensity = 0.5;
+                body.material.emissiveIntensity = 0.4;
+            } else {
+                // 恢复正常大小
+                bearGroup.scale.x += (1.0 - bearGroup.scale.x) * 0.1;
+                bearGroup.scale.y += (1.0 - bearGroup.scale.y) * 0.1;
+                bearGroup.scale.z += (1.0 - bearGroup.scale.z) * 0.1;
+                
+                // 恢复正常发光
+                head.material.emissiveIntensity += (0.3 - head.material.emissiveIntensity) * 0.1;
+                body.material.emissiveIntensity += (0.3 - body.material.emissiveIntensity) * 0.1;
+            }
+
+            // 点击后的挥手动画
+            if (mouseClickEffect > 0) {
+                joints.rightUpperArm.rotation.z = -0.4 - Math.sin(mouseClickEffect * 10) * 0.8;
+                joints.rightForearm.rotation.z = -0.2 - Math.sin(mouseClickEffect * 10) * 0.6;
+                joints.rightHand.position.y = 0.6 + Math.sin(mouseClickEffect * 12) * 0.2;
+                
+                mouseClickEffect -= 0.02;
+                if (mouseClickEffect < 0) mouseClickEffect = 0;
+            } else {
+                // 正常的手臂摆动
+                joints.leftUpperArm.rotation.z = 0.4 + Math.sin(time * 0.6) * 0.2;
+                joints.rightUpperArm.rotation.z = -0.4 - Math.sin(time * 0.6) * 0.2;
+                
+                joints.leftForearm.rotation.z = 0.2 + Math.sin(time * 0.8) * 0.15;
+                joints.rightForearm.rotation.z = -0.2 - Math.sin(time * 0.8) * 0.15;
+
+                // 手部细微摆动
+                joints.leftHand.position.y = 0.6 + Math.sin(time * 1.2) * 0.1;
+                joints.rightHand.position.y = 0.6 - Math.sin(time * 1.2) * 0.1;
+            }
+
+            // 身体缓慢旋转（但会受鼠标影响）
+            const baseRotation = Math.sin(time * 0.2) * 0.2;
+            bearGroup.rotation.y += (baseRotation - bearGroup.rotation.y) * 0.05;
+            
+            // 身体上下浮动（呼吸效果）
+            bearGroup.position.y = Math.sin(time * 0.8) * 0.25;
+
+            // 身体轻微前后倾斜
+            bearGroup.rotation.x += (Math.sin(time * 0.5) * 0.04 - bearGroup.rotation.x) * 0.05;
+
+            // 腿部轻微摆动
+            joints.leftLeg.rotation.x = Math.sin(time * 0.5) * 0.05;
+            joints.rightLeg.rotation.x = -Math.sin(time * 0.5) * 0.05;
+
+            // 粒子旋转
+            particlesMesh.rotation.y += 0.0003;
+            particlesMesh.rotation.x += 0.0001;
+
+            // 相机跟随鼠标，更平滑
+            camera.position.x += (mouseX * 2 - 2 - camera.position.x) * 0.03;
+            camera.position.y += (mouseY * 2 + 2 - camera.position.y) * 0.03;
+            camera.lookAt(bearGroup.position);
+
+            // 光源动态移动
+            pointLight1.position.x = Math.sin(time * 0.7) * 8;
+            pointLight1.position.z = Math.cos(time * 0.7) * 8;
+            pointLight1.position.y = Math.sin(time * 0.5) * 3 + 5;
+
+            pointLight2.position.x = Math.cos(time * 0.6) * 8;
+            pointLight2.position.z = Math.sin(time * 0.6) * 8;
+
+            renderer.render(scene, camera);
+
+            // 更新FPS
+            frames++;
+            const currentTime = Date.now();
+            if (currentTime - lastTime >= 1000) {
+                document.getElementById('fps').textContent = frames;
+                frames = 0;
+                lastTime = currentTime;
+            }
+        }
+
+        // 响应式处理
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // 初始化相机朝向
+        camera.lookAt(bearGroup.position);
+
+        animate();
+    </script>
+</body>
+</html>
