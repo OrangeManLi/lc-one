@@ -313,6 +313,43 @@
 
     <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
     <script>
+        // WebGL 兼容性检测
+        function isWebGLAvailable() {
+            try {
+                const canvas = document.createElement('canvas');
+                return !!(window.WebGLRenderingContext &&
+                    (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // 如果不支持 WebGL，显示降级提示
+        if (!isWebGLAvailable()) {
+            const container = document.getElementById('canvas-container');
+            container.innerHTML = `
+                <div style="
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100%;
+                    color: #00ffff;
+                    text-align: center;
+                    padding: 20px;
+                    background: linear-gradient(135deg, #0a0e27 0%, #1a1e3c 100%);
+                ">
+                    <div style="font-size: 80px; margin-bottom: 20px;">🐻</div>
+                    <h2 style="margin-bottom: 10px;">3D 小熊需要 WebGL 支持</h2>
+                    <p style="color: #a0a0a0; max-width: 300px;">
+                        您的浏览器不支持 WebGL。请尝试更新浏览器或使用 Chrome、Firefox、Safari 等现代浏览器访问。
+                    </p>
+                </div>
+            `;
+            // 隐藏技术信息面板
+            document.querySelector('.tech-info').style.display = 'none';
+        }
+
         // 博客展开/收起功能
         function toggleBlog() {
             const section = document.getElementById('blogSection');
@@ -330,14 +367,22 @@
             }
         }
 
+        // 只有在支持 WebGL 时才初始化 Three.js
+        if (!isWebGLAvailable()) {
+            throw new Error('WebGL not supported');
+        }
+
         // 场景设置
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 限制最大像素比，提升移动端性能
         document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        // 检测是否为移动设备
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
 
         // 创建小熊模型
         const bearGroup = new THREE.Group();
@@ -582,9 +627,9 @@
             leftPupil, rightPupil
         };
 
-        // 粒子系统
+        // 粒子系统 - 根据设备性能调整粒子数量
         const particlesGeometry = new THREE.BufferGeometry();
-        const particlesCount = 5000;
+        const particlesCount = isMobile ? 1500 : 5000; // 移动端减少粒子数量
         const posArray = new Float32Array(particlesCount * 3);
         const colorArray = new Float32Array(particlesCount * 3);
 
@@ -622,6 +667,9 @@
 
         const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
         scene.add(particlesMesh);
+
+        // 更新粒子数显示
+        document.getElementById('particles').textContent = particlesCount;
 
         // 光照
         const ambientLight = new THREE.AmbientLight(0x404040, 2);
@@ -726,19 +774,19 @@
             }
         });
 
-        // 鼠标点击 - 小熊会"挥手"
-        document.addEventListener('click', (event) => {
+        // 点击/触摸小熊的处理函数
+        function handleBearInteraction(clientX, clientY) {
             const raycaster = new THREE.Raycaster();
             const mouse = new THREE.Vector2(
-                (event.clientX / window.innerWidth) * 2 - 1,
-                -(event.clientY / window.innerHeight) * 2 + 1
+                (clientX / window.innerWidth) * 2 - 1,
+                -(clientY / window.innerHeight) * 2 + 1
             );
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObjects(bearGroup.children, true);
-            
+
             if (intersects.length > 0) {
                 mouseClickEffect = 1;
-                
+
                 // 创建点击波纹效果
                 const rippleGeometry = new THREE.RingGeometry(0.5, 0.7, 32);
                 const rippleMaterial = new THREE.MeshBasicMaterial({
@@ -751,7 +799,7 @@
                 ripple.position.copy(intersects[0].point);
                 ripple.lookAt(camera.position);
                 scene.add(ripple);
-                
+
                 // 波纹动画
                 let rippleScale = 1;
                 const rippleInterval = setInterval(() => {
@@ -763,8 +811,86 @@
                         clearInterval(rippleInterval);
                     }
                 }, 30);
+                return true;
             }
+            return false;
+        }
+
+        // 鼠标点击 - 小熊会"挥手"
+        document.addEventListener('click', (event) => {
+            handleBearInteraction(event.clientX, event.clientY);
         });
+
+        // ========== 移动端触摸事件支持 ==========
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let isTouchDragging = false;
+
+        // 触摸开始
+        document.addEventListener('touchstart', (event) => {
+            const touch = event.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+
+            // 检查是否点击在小熊上
+            const testX = (touch.clientX / window.innerWidth) * 2 - 1;
+            const testY = -(touch.clientY / window.innerHeight) * 2 + 1;
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(new THREE.Vector2(testX, testY), camera);
+            const intersects = raycaster.intersectObjects(bearGroup.children, true);
+
+            if (intersects.length === 0) {
+                isTouchDragging = true;
+                previousMouseX = touch.clientX;
+                previousMouseY = touch.clientY;
+            }
+        }, { passive: true });
+
+        // 触摸移动
+        document.addEventListener('touchmove', (event) => {
+            const touch = event.touches[0];
+            mouseX = (touch.clientX / window.innerWidth) * 2 - 1;
+            mouseY = -(touch.clientY / window.innerHeight) * 2 + 1;
+
+            // 如果正在拖拽，更新摄像机角度
+            if (isTouchDragging) {
+                const deltaX = touch.clientX - previousMouseX;
+                const deltaY = touch.clientY - previousMouseY;
+
+                cameraAngleX -= deltaX * 0.008;
+                cameraAngleY += deltaY * 0.008;
+
+                // 限制垂直角度范围
+                cameraAngleY = Math.max(-0.8, Math.min(0.8, cameraAngleY));
+
+                previousMouseX = touch.clientX;
+                previousMouseY = touch.clientY;
+            }
+
+            // 计算小熊应该看向的方向
+            const bearScreenPos = bearGroup.position.clone();
+            bearScreenPos.project(camera);
+
+            const dx = mouseX - bearScreenPos.x;
+            const dy = mouseY - bearScreenPos.y;
+
+            targetRotationY = dx * 0.5;
+            targetRotationX = dy * 0.3;
+        }, { passive: true });
+
+        // 触摸结束
+        document.addEventListener('touchend', (event) => {
+            const touch = event.changedTouches[0];
+            const deltaX = Math.abs(touch.clientX - touchStartX);
+            const deltaY = Math.abs(touch.clientY - touchStartY);
+
+            // 如果移动距离很小，视为点击
+            if (deltaX < 10 && deltaY < 10) {
+                handleBearInteraction(touch.clientX, touch.clientY);
+            }
+
+            isTouchDragging = false;
+        }, { passive: true });
 
         // FPS计数器
         let lastTime = Date.now();
