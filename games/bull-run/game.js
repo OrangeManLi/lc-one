@@ -1,3 +1,10 @@
+import {
+  t,
+  getLanguage,
+  getLocale,
+  onLanguageChange,
+} from "../../shared/i18n.mjs";
+import { localizeHTML } from "../../shared/language-ui.mjs";
 (() => {
   "use strict";
   const canvas = document.getElementById("game"),
@@ -64,9 +71,9 @@
     best = Number(localStorage.getItem("pixel-mario-best-v1")) || 0;
   } catch (_) {}
   function updateBest() {
-    $("best").textContent = best
-      ? "最高积分 " + String(best).padStart(6, "0")
-      : "最高积分 —";
+    $("best").textContent = t(
+      best ? "最高积分 " + String(best).padStart(6, "0") : "最高积分 —",
+    );
   }
   updateBest();
   const font = {
@@ -404,12 +411,20 @@
     );
     if (keys.jump && !old) jumpBuffer = 8;
   }
+  let overlaySource = [
+    "BULL RUN / OPENING BELL",
+    "今天，你是多头主角。",
+    "踩住空头熊，跳过市场深坑。<br>收集筹码，去交易所敲响胜利的钟。",
+    "开市出发",
+    "Enter 开始 · 空格二段跳 / 长按连跳 · F 全屏",
+  ];
   function showOverlay(eyebrow, title, copy, button, hint) {
-    $("overlay-eyebrow").textContent = eyebrow;
-    $("overlay-title").textContent = title;
-    $("overlay-copy").innerHTML = copy;
-    $("play").innerHTML = button + " <span>▶</span>";
-    $("overlay-hint").textContent = hint;
+    overlaySource = [eyebrow, title, copy, button, hint];
+    $("overlay-eyebrow").textContent = t(eyebrow);
+    $("overlay-title").textContent = t(title);
+    $("overlay-copy").innerHTML = localizeHTML(copy);
+    $("play").innerHTML = localizeHTML(button + " <span>▶</span>");
+    $("overlay-hint").textContent = t(hint);
     $("overlay").classList.remove("hidden");
   }
   function refreshStatus() {
@@ -422,10 +437,11 @@
       winning: "敲响胜利钟",
       won: "牛市闯关成功",
     };
-    $("status").textContent = labels[mode] || "";
-    $("pause").innerHTML =
-      mode === "paused" ? "继续 <kbd>P</kbd>" : "暂停 <kbd>P</kbd>";
-    $("stage-pause").textContent = mode === "paused" ? "继续 ▶" : "暂停 Ⅱ";
+    $("status").textContent = t(labels[mode] || "");
+    $("pause").innerHTML = localizeHTML(
+      mode === "paused" ? "继续 <kbd>P</kbd>" : "暂停 <kbd>P</kbd>",
+    );
+    $("stage-pause").textContent = t(mode === "paused" ? "继续 ▶" : "暂停 Ⅱ");
   }
   function startGame() {
     buildLevel();
@@ -1130,29 +1146,51 @@
       ctx.restore();
     }
     for (const p of particles) rect(p.x, p.y, p.size, p.size, p.color);
-    for (const t of texts) pixelText(t.text, t.x, t.y, 2, "#fffbd0");
+    for (const item of texts) {
+      const captions = {
+        "DOUBLE!": "二段跳！",
+        CHECKPOINT: "补给站",
+        "1 UP": "生命 +1",
+      };
+      const zh = captions[item.text];
+      if (zh) hudLabel(zh, item.text, item.x, item.y, 2, "#fffbd0");
+      else pixelText(item.text, item.x, item.y, 2, "#fffbd0");
+    }
     ctx.restore();
     drawHUD();
+  }
+  function hudLabel(zh, en, x, y, scale = 3, color = colors.hud) {
+    if (getLanguage() === "en") {
+      pixelText(en, x, y, scale, color);
+      return;
+    }
+    ctx.save();
+    ctx.font = `600 ${scale * 5}px 'PingFang SC', 'Microsoft YaHei', sans-serif`;
+    ctx.textBaseline = "top";
+    ctx.fillStyle = color;
+    ctx.fillText(zh, x, y - 1);
+    ctx.restore();
   }
   function drawHUD() {
     rect(0, 0, W, 67, colors["pixel-dark"]);
     rect(0, 66, W, 1, colors.grid);
-    pixelText("ALPHA", 34, 18, 3, colors.up);
+    hudLabel("积分", "ALPHA", 34, 18, 3, colors.up);
     pixelText(String(score).padStart(6, "0"), 34, 40, 3);
-    pixelText("CHIPS", 236, 18, 3, colors.gold);
+    hudLabel("筹码", "CHIPS", 236, 18, 3, colors.gold);
     drawCoin(239, 37);
     pixelText("X" + String(collected).padStart(2, "0"), 261, 40, 3);
-    pixelText("ROUND", 423, 18, 3, colors.cloud);
+    hudLabel("关卡", "ROUND", 423, 18, 3, colors.cloud);
     pixelText("1-1", 442, 40, 3);
-    pixelText("CLOSE", 614, 18, 3, colors.down);
+    hudLabel("倒计时", "CLOSE", 614, 18, 3, colors.down);
     pixelText(
       String(Math.max(0, Math.ceil(time))).padStart(3, "0"),
       628,
       40,
       3,
     );
-    pixelText("LIVES X" + lives, 34, 83, 2);
-    if (player && player.power) pixelText("BULLISH", 34, 101, 2, colors.up);
+    hudLabel("生命 ×" + lives, "LIVES X" + lives, 34, 83, 2);
+    if (player && player.power)
+      hudLabel("利好护盾", "BULLISH", 34, 101, 2, colors.up);
     // A quiet progress rail, kept below the HUD.
     rect(424, 83, 106, 2, "#ffffff40");
     rect(
@@ -1172,11 +1210,12 @@
   });
   $("sound").addEventListener("click", () => {
     soundOn = !soundOn;
-    $("sound").textContent = "音效 " + (soundOn ? "开" : "关");
+    $("sound").textContent = t("音效 " + (soundOn ? "开" : "关"));
     $("sound").setAttribute(
       "aria-label",
-      soundOn ? "关闭游戏音效" : "开启游戏音效",
+      t(soundOn ? "关闭游戏音效" : "开启游戏音效"),
     );
+    $("sound").title = t(soundOn ? "关闭游戏音效" : "开启游戏音效");
     if (soundOn) tone(660, 0.08);
   });
   let fullscreenBusy = false,
@@ -1189,13 +1228,19 @@
       nativeFullscreen() || $("stage").classList.contains("is-expanded"),
     );
   }
+  function renderFullscreenLabels() {
+    const active = isFullscreen();
+    $("fullscreen").textContent = t(active ? "退出全屏 ⛶" : "全屏 ⛶");
+    $("stage-fullscreen").textContent = t("退出全屏 ⛶");
+    $("fullscreen").title = t(active ? "退出全屏 (F / Esc)" : "全屏游戏 (F)");
+  }
   function syncFullscreen() {
     const active = isFullscreen();
     $("stage").classList.toggle("fullscreen-active", active);
     document.body.classList.toggle("game-expanded", active);
-    $("fullscreen").textContent = active ? "退出全屏 ⛶" : "全屏 ⛶";
+    $("fullscreen").textContent = t(active ? "退出全屏 ⛶" : "全屏 ⛶");
     $("fullscreen").setAttribute("aria-pressed", String(active));
-    $("fullscreen").title = active ? "退出全屏 (F / Esc)" : "全屏游戏 (F)";
+    $("fullscreen").title = t(active ? "退出全屏 (F / Esc)" : "全屏游戏 (F)");
     canvas.focus({ preventScroll: true });
     clearInputs();
   }
@@ -1254,7 +1299,11 @@
     KeyX: "run",
   };
   window.addEventListener("keydown", (e) => {
-    if (e.target instanceof Element && e.target.closest("a[href]")) return;
+    if (
+      e.target instanceof Element &&
+      e.target.closest("a[href], [data-language-switch]")
+    )
+      return;
     if (keyMap[e.code]) {
       e.preventDefault();
       if (mode === "playing") setInput(e.code, keyMap[e.code], true);
@@ -1333,9 +1382,24 @@
     drawWorld();
     requestAnimationFrame(frame);
   }
+  onLanguageChange(() => {
+    updateBest();
+    refreshStatus();
+    $("sound").textContent = t("音效 " + (soundOn ? "开" : "关"));
+    $("sound").setAttribute(
+      "aria-label",
+      t(soundOn ? "关闭游戏音效" : "开启游戏音效"),
+    );
+    $("sound").title = t(soundOn ? "关闭游戏音效" : "开启游戏音效");
+    renderFullscreenLabels();
+    if (mode !== "playing" && mode !== "winning") showOverlay(...overlaySource);
+    drawWorld();
+    if (mode === "playing") canvas.focus({ preventScroll: true });
+  });
   buildLevel();
   player = makePlayer(112);
   refreshStatus();
   expandInPage();
+  showOverlay(...overlaySource);
   requestAnimationFrame(frame);
 })();

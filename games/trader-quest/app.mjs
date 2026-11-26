@@ -1,4 +1,11 @@
 import {
+  t,
+  getLanguage,
+  getLocale,
+  onLanguageChange,
+} from "../../shared/i18n.mjs";
+import { localizeHTML } from "../../shared/language-ui.mjs";
+import {
   STOCKS,
   INITIAL_CASH,
   TOTAL_DAYS,
@@ -24,11 +31,11 @@ const $ = (id) => document.getElementById(id);
 const STORAGE_KEY = "market-play-v1";
 const BEST_KEY = "market-play-best";
 const fmt = (n) =>
-  n.toLocaleString("zh-CN", {
+  n.toLocaleString(getLocale(), {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-const integer = (n) => n.toLocaleString("zh-CN");
+const integer = (n) => n.toLocaleString(getLocale());
 const signed = (n) => `${n >= 0 ? "+" : "−"}${fmt(Math.abs(n))}`;
 const direction = (n) => (n > 0.001 ? "up" : n < -0.001 ? "down" : "flat");
 const icon = (name) => `<svg aria-hidden="true"><use href="#i-${name}"/></svg>`;
@@ -47,6 +54,7 @@ let selected = "nova",
   hover = -1,
   chartGeometry,
   toastTimer;
+let lastToast = null;
 let best = -Infinity;
 try {
   const stored = localStorage.getItem(BEST_KEY);
@@ -56,9 +64,10 @@ try {
   /* Storage can be unavailable in private contexts. */
 }
 function toast(message, error = false) {
+  lastToast = { message, error };
   const el = $("toast");
   clearTimeout(toastTimer);
-  el.textContent = message;
+  el.textContent = t(message);
   el.classList.toggle("error", error);
   el.hidden = false;
   toastTimer = setTimeout(() => {
@@ -94,20 +103,19 @@ function renderAccount() {
   const assets = assetsOf(state),
     profit = assets - INITIAL_CASH,
     position = assets - state.cash;
-  $("total-assets").innerHTML = decimalHTML(assets);
-  $("total-profit").innerHTML = decimalHTML(
-    Math.abs(profit),
-    profit >= 0 ? "+" : "−",
+  $("total-assets").innerHTML = localizeHTML(decimalHTML(assets));
+  $("total-profit").innerHTML = localizeHTML(
+    decimalHTML(Math.abs(profit), profit >= 0 ? "+" : "−"),
   );
   $("total-profit").className = `metric-value ${direction(profit)}`;
-  $("return-rate").textContent = `${signed((profit / INITIAL_CASH) * 100)}%`;
+  $("return-rate").textContent = t(`${signed((profit / INITIAL_CASH) * 100)}%`);
   $("return-rate").className = `neutral-pill ${direction(profit)}`;
-  $("cash").innerHTML = decimalHTML(state.cash);
-  $("position-value").innerHTML = decimalHTML(position);
+  $("cash").innerHTML = localizeHTML(decimalHTML(state.cash));
+  $("position-value").innerHTML = localizeHTML(decimalHTML(position));
   const count = Object.keys(state.holdings).length;
-  $("position-count").textContent = `${count} 只股票`;
+  $("position-count").textContent = t(`${count} 只股票`);
   const rate = assets ? (position / assets) * 100 : 0;
-  $("position-rate").textContent = `仓位 ${Math.round(rate)}%`;
+  $("position-rate").textContent = t(`仓位 ${Math.round(rate)}%`);
   $("position-meter").style.width = `${rate}%`;
   $("equity-spark").setAttribute(
     "d",
@@ -117,19 +125,21 @@ function renderAccount() {
       44,
     ),
   );
-  $("day").textContent = String(state.day).padStart(2, "0");
-  $("session-status").textContent = state.finished ? "已收官" : "开市中";
-  $("next-day").innerHTML = state.finished
-    ? `查看本轮战绩 ${icon("cup")}`
-    : state.day === TOTAL_DAYS
-      ? `收官，查看战绩 ${icon("cup")}`
-      : `收盘 · 抽取事件 ${icon("spark")}`;
+  $("day").textContent = t(String(state.day).padStart(2, "0"));
+  $("session-status").textContent = t(state.finished ? "已收官" : "开市中");
+  $("next-day").innerHTML = localizeHTML(
+    state.finished
+      ? `查看本轮战绩 ${icon("cup")}`
+      : state.day === TOTAL_DAYS
+        ? `收官，查看战绩 ${icon("cup")}`
+        : `收盘 · 抽取事件 ${icon("spark")}`,
+  );
   const progress = Math.max(
     0,
     Math.min(100, (profit / (TARGET - INITIAL_CASH)) * 100),
   );
   $("challenge-progress").style.width = `${progress}%`;
-  $("challenge-status").textContent =
+  $("challenge-status").textContent = t(
     assets >= TARGET
       ? "目标已达成！稳住，守住你的胜利。"
       : state.finished
@@ -138,52 +148,65 @@ function renderAccount() {
           ? `距离目标还差 ¥${fmt(TARGET - assets)}`
           : profit < 0
             ? "暂时的回撤，也是交易的一部分。"
-            : "本金已就位，故事由你来写。";
+            : "本金已就位，故事由你来写。",
+  );
   const simulation = document.querySelector(".simulation");
-  simulation.innerHTML = `<span></span>${state.finished ? "本轮已收官" : "挑战进行中"}`;
+  simulation.innerHTML = localizeHTML(
+    `<span></span>${state.finished ? "本轮已收官" : "挑战进行中"}`,
+  );
 }
 function renderWatchlist() {
-  $("stock-list").innerHTML = STOCKS.map((stock) => {
-    const change = changeOf(state, stock.id),
-      color = direction(change),
-      history = state.market[stock.id];
-    return `<button class="stock-item ${selected === stock.id ? "active" : ""}" data-stock="${stock.id}" aria-pressed="${selected === stock.id}" aria-label="${stock.name}，价格 ${fmt(priceOf(state, stock.id))}，涨跌 ${signed(change)}%"><span class="stock-item-name">${stock.name}</span><span class="stock-item-price ${color}">${fmt(priceOf(state, stock.id))}</span><span class="stock-item-bottom">${stock.code}<svg class="mini-spark ${color}" viewBox="0 0 50 16" aria-hidden="true"><path d="${sparkPath(history.slice(-15).map((c) => c.close))}"/></svg></span><span class="stock-item-change ${color}">${signed(change)}%</span></button>`;
-  }).join("");
+  $("stock-list").innerHTML = localizeHTML(
+    STOCKS.map((stock) => {
+      const change = changeOf(state, stock.id),
+        color = direction(change),
+        history = state.market[stock.id];
+      return `<button class="stock-item ${selected === stock.id ? "active" : ""}" data-stock="${stock.id}" aria-pressed="${selected === stock.id}" aria-label="${stock.name}，价格 ${fmt(priceOf(state, stock.id))}，涨跌 ${signed(change)}%"><span class="stock-item-name">${stock.name}</span><span class="stock-item-price ${color}">${fmt(priceOf(state, stock.id))}</span><span class="stock-item-bottom">${stock.code}<svg class="mini-spark ${color}" viewBox="0 0 50 16" aria-hidden="true"><path d="${sparkPath(history.slice(-15).map((c) => c.close))}"/></svg></span><span class="stock-item-change ${color}">${signed(change)}%</span></button>`;
+    }).join(""),
+  );
 }
 function renderSelected() {
   const stock = STOCKS.find((s) => s.id === selected),
     current = state.market[selected].at(-1),
     change = changeOf(state, selected),
     color = direction(change);
-  $("stock-name").textContent = stock.name;
-  $("stock-code").textContent = stock.code;
-  $("stock-sector").textContent = stock.sector;
-  $("stock-avatar").textContent = stock.letter;
+  $("stock-name").textContent = t(stock.name);
+  $("stock-code").textContent = t(stock.code);
+  $("stock-sector").textContent = t(stock.sector);
+  $("stock-avatar").textContent = t(stock.letter);
   $("stock-avatar").style.color = stock.color;
   $("stock-avatar").style.backgroundColor = `${stock.color}12`;
   $("stock-avatar").style.borderColor = `${stock.color}24`;
-  $("stock-price").textContent = fmt(current.close);
+  $("stock-price").textContent = t(fmt(current.close));
   $("stock-price").className = color;
-  $("stock-change").textContent =
-    `${signed(current.close - state.market[selected].at(-2).close)}   ${signed(change)}%`;
+  $("stock-change").textContent = t(
+    `${signed(current.close - state.market[selected].at(-2).close)}   ${signed(change)}%`,
+  );
   $("stock-change").className = color;
-  $("order-name").textContent = stock.name;
-  $("order-code").textContent = stock.code;
-  $("order-price").textContent = fmt(current.close);
-  $("quote-open").textContent = fmt(current.open);
-  $("quote-high").textContent = fmt(current.high);
-  $("quote-low").textContent = fmt(current.low);
-  $("quote-volume").textContent = `${(current.volume / 10000).toFixed(1)}万`;
+  $("order-name").textContent = t(stock.name);
+  $("order-code").textContent = t(stock.code);
+  $("order-price").textContent = t(fmt(current.close));
+  $("quote-open").textContent = t(fmt(current.open));
+  $("quote-high").textContent = t(fmt(current.high));
+  $("quote-low").textContent = t(fmt(current.low));
+  $("quote-volume").textContent = t(
+    getLanguage() === "en"
+      ? `${(current.volume / 1000).toFixed(1)}K`
+      : `${(current.volume / 10000).toFixed(1)}万`,
+  );
   $("price-chart").setAttribute(
     "aria-label",
-    `${stock.name} ${chartType === "candles" ? "日 K" : "走势"}图，收盘价 ${fmt(current.close)}，今日涨跌 ${signed(change)}%，黄色为5日均线，紫色为10日均线。`,
+    t(
+      `${stock.name} ${chartType === "candles" ? "日 K" : "走势"}图，收盘价 ${fmt(current.close)}，今日涨跌 ${signed(change)}%，黄色为5日均线，紫色为10日均线。`,
+    ),
   );
   updateOhlc();
 }
 function updateOhlc(candle) {
   const c = candle || state.market[selected].at(-1);
-  $("chart-ohlc").innerHTML =
-    `<span>开 <b>${fmt(c.open)}</b></span><span>高 <b>${fmt(c.high)}</b></span><span>低 <b>${fmt(c.low)}</b></span><span>收 <b class="${direction(c.close - c.open)}">${fmt(c.close)}</b></span>`;
+  $("chart-ohlc").innerHTML = localizeHTML(
+    `<span>开 <b>${fmt(c.open)}</b></span><span>高 <b>${fmt(c.high)}</b></span><span>低 <b>${fmt(c.low)}</b></span><span>收 <b class="${direction(c.close - c.open)}">${fmt(c.close)}</b></span>`,
+  );
 }
 function renderOrder() {
   const input = $("quantity"),
@@ -191,22 +214,25 @@ function renderOrder() {
     valid = Number.isSafeInteger(qty) && qty > 0 && qty % 100 === 0;
   const max = maxShares(state, selected, side);
   const value = valid ? priceOf(state, selected) * qty : 0;
-  $("order-value").textContent = `¥${fmt(value)}`;
-  $("order-fee").textContent = valid ? `¥${fmt(feeOf(value))}` : "—";
+  $("order-value").textContent = t(`¥${fmt(value)}`);
+  $("order-fee").textContent = t(valid ? `¥${fmt(feeOf(value))}` : "—");
   const locked =
     (state.holdings[selected]?.shares || 0) -
     (state.holdings[selected]?.available || 0);
-  $("available-shares").textContent =
-    `${side === "buy" ? "可买" : "可卖"} ${integer(max)} 股${side === "sell" && locked ? ` · ${integer(locked)} 股待解锁` : ""}`;
+  $("available-shares").textContent = t(
+    `${side === "buy" ? "可买" : "可卖"} ${integer(max)} 股${side === "sell" && locked ? ` · ${integer(locked)} 股待解锁` : ""}`,
+  );
   $("buy-tab").classList.toggle("selected", side === "buy");
   $("sell-tab").classList.toggle("selected", side === "sell");
   $("buy-tab").setAttribute("aria-pressed", String(side === "buy"));
   $("sell-tab").setAttribute("aria-pressed", String(side === "sell"));
   const button = $("trade-button");
   button.classList.toggle("sell", side === "sell");
-  button.textContent = state.finished
-    ? "本轮已收官"
-    : `${side === "buy" ? "买入" : "卖出"} ${valid ? integer(qty) : "—"} 股`;
+  button.textContent = t(
+    state.finished
+      ? "本轮已收官"
+      : `${side === "buy" ? "买入" : "卖出"} ${valid ? integer(qty) : "—"} 股`,
+  );
   button.disabled = state.finished || !valid || qty > max;
   $("decrease").disabled =
     state.finished || (Number.isFinite(qty) && qty <= 100);
@@ -218,43 +244,49 @@ function renderOrder() {
 }
 function renderNews() {
   const event = eventFor(state);
-  $("news-day").textContent = `DAY ${String(state.day).padStart(2, "0")}`;
-  $("news-title").textContent = event.title;
-  $("news-body").textContent = event.body;
-  $("news-tag").textContent = event.tag;
-  $("news-sectors").textContent = `关注 ${STOCKS.filter((s) => event.bias[s.id])
-    .slice(0, 3)
-    .map((s) => s.sector)
-    .join(" · ")}`;
+  $("news-day").textContent = t(`DAY ${String(state.day).padStart(2, "0")}`);
+  $("news-title").textContent = t(event.title);
+  $("news-body").textContent = t(event.body);
+  $("news-tag").textContent = t(event.tag);
+  $("news-sectors").textContent = t(
+    `关注 ${STOCKS.filter((s) => event.bias[s.id])
+      .slice(0, 3)
+      .map((s) => s.sector)
+      .join(" · ")}`,
+  );
 }
 function emptyState(title, message, name) {
   return `<div class="empty-state">${icon(name)}<h3>${title}</h3><p>${message}</p><button class="secondary-button" data-return-market>去看看行情</button></div>`;
 }
 function renderPortfolio() {
   const entries = STOCKS.filter((s) => state.holdings[s.id]);
-  $("portfolio-content").innerHTML = entries.length
-    ? `<div class="table-scroll"><table><thead><tr><th>股票</th><th>持仓 / 可卖</th><th>成本价</th><th>最新价</th><th>持仓市值</th><th>浮动盈亏</th><th>操作</th></tr></thead><tbody>${entries
-        .map((s) => {
-          const h = state.holdings[s.id],
-            price = priceOf(state, s.id),
-            profit = (price - h.cost) * h.shares;
-          return `<tr><td>${s.name}<small>${s.code} · ${s.sector}</small></td><td>${integer(h.shares)}<small>可卖 ${integer(h.available)} 股</small></td><td>¥${fmt(h.cost)}</td><td>¥${fmt(price)}</td><td>¥${fmt(price * h.shares)}</td><td class="${direction(profit)}">${signed(profit)}<small class="${direction(profit)}">${signed((price / h.cost - 1) * 100)}%</small></td><td><button class="table-trade" data-trade-stock="${s.id}">${state.finished ? "看行情" : "交易"}</button></td></tr>`;
-        })
-        .join("")}</tbody></table></div>`
-    : emptyState(
-        "手里有现金，心里有底气。",
-        "你还没有持仓。先看看市场，第一笔不必着急。",
-        "wallet",
-      );
+  $("portfolio-content").innerHTML = localizeHTML(
+    entries.length
+      ? `<div class="table-scroll"><table><thead><tr><th>股票</th><th>持仓 / 可卖</th><th>成本价</th><th>最新价</th><th>持仓市值</th><th>浮动盈亏</th><th>操作</th></tr></thead><tbody>${entries
+          .map((s) => {
+            const h = state.holdings[s.id],
+              price = priceOf(state, s.id),
+              profit = (price - h.cost) * h.shares;
+            return `<tr><td>${s.name}<small>${s.code} · ${s.sector}</small></td><td>${integer(h.shares)}<small>可卖 ${integer(h.available)} 股</small></td><td>¥${fmt(h.cost)}</td><td>¥${fmt(price)}</td><td>¥${fmt(price * h.shares)}</td><td class="${direction(profit)}">${signed(profit)}<small class="${direction(profit)}">${signed((price / h.cost - 1) * 100)}%</small></td><td><button class="table-trade" data-trade-stock="${s.id}">${state.finished ? "看行情" : "交易"}</button></td></tr>`;
+          })
+          .join("")}</tbody></table></div>`
+      : emptyState(
+          "手里有现金，心里有底气。",
+          "你还没有持仓。先看看市场，第一笔不必着急。",
+          "wallet",
+        ),
+  );
 }
 function renderHistory() {
-  $("history-content").innerHTML = state.trades.length
-    ? `<div class="table-scroll"><table><thead><tr><th>交易日</th><th>股票</th><th>方向</th><th>成交价</th><th>数量</th><th>成交金额</th><th>手续费</th></tr></thead><tbody>${state.trades.map((t) => `<tr><td>DAY ${String(t.day).padStart(2, "0")}</td><td>${STOCKS.find((s) => s.id === t.id).name}</td><td class="${t.side === "buy" ? "up" : "down"}">${t.side === "buy" ? "买入" : "卖出"}</td><td>¥${fmt(t.price)}</td><td>${integer(t.qty)} 股</td><td>¥${fmt(t.value)}</td><td>¥${fmt(t.fee)}</td></tr>`).join("")}</tbody></table></div>`
-    : emptyState(
-        "好交易，从耐心开始。",
-        "还没有交易记录，去寻找你的第一笔机会吧。",
-        "history",
-      );
+  $("history-content").innerHTML = localizeHTML(
+    state.trades.length
+      ? `<div class="table-scroll"><table><thead><tr><th>交易日</th><th>股票</th><th>方向</th><th>成交价</th><th>数量</th><th>成交金额</th><th>手续费</th></tr></thead><tbody>${state.trades.map((t) => `<tr><td>DAY ${String(t.day).padStart(2, "0")}</td><td>${STOCKS.find((s) => s.id === t.id).name}</td><td class="${t.side === "buy" ? "up" : "down"}">${t.side === "buy" ? "买入" : "卖出"}</td><td>¥${fmt(t.price)}</td><td>${integer(t.qty)} 股</td><td>¥${fmt(t.value)}</td><td>¥${fmt(t.fee)}</td></tr>`).join("")}</tbody></table></div>`
+      : emptyState(
+          "好交易，从耐心开始。",
+          "还没有交易记录，去寻找你的第一笔机会吧。",
+          "history",
+        ),
+  );
 }
 function render() {
   renderAccount();
@@ -295,7 +327,7 @@ function setSide(value) {
   $("quantity").value = 100;
   renderOrder();
 }
-function showResult() {
+function showResult({ persistBest = true } = {}) {
   const assets = assetsOf(state),
     profit = (assets / INITIAL_CASH - 1) * 100;
   const title =
@@ -306,24 +338,26 @@ function showResult() {
         : profit >= 0
           ? "稳住本金，也是一种胜利。"
           : "韭菜会长大，交易会继续。";
-  $("result-title").textContent = title;
-  $("result-description").textContent =
+  $("result-title").textContent = t(title);
+  $("result-description").textContent = t(
     assets >= TARGET
       ? "30 个交易日，完成了从小散到股神的进阶。"
-      : "市场给了你一份答卷，下一次的故事由你重写。";
-  $("result-assets").textContent = `¥${fmt(assets)}`;
-  $("result-return").textContent = `${signed(profit)}%`;
+      : "市场给了你一份答卷，下一次的故事由你重写。",
+  );
+  $("result-assets").textContent = t(`¥${fmt(assets)}`);
+  $("result-return").textContent = t(`${signed(profit)}%`);
   $("result-return").className = direction(profit);
-  $("result-drawdown").textContent = `${fmt(state.drawdown * 100)}%`;
-  $("result-trades").textContent = String(state.trades.length);
+  $("result-drawdown").textContent = t(`${fmt(state.drawdown * 100)}%`);
+  $("result-trades").textContent = t(String(state.trades.length));
   best = Math.max(best, profit);
   try {
-    localStorage.setItem(BEST_KEY, String(best));
+    if (persistBest) localStorage.setItem(BEST_KEY, String(best));
   } catch {
     /* Best score is optional. */
   }
-  $("personal-best").textContent =
-    `个人历史最佳收益 ${signed(best)}% · 下次见，交易员。`;
+  $("personal-best").textContent = t(
+    `个人历史最佳收益 ${signed(best)}% · 下次见，交易员。`,
+  );
   if (!$("result-dialog").open) $("result-dialog").showModal();
 }
 function restart() {
@@ -356,8 +390,8 @@ try {
 }
 function renderSound() {
   const b = $("sound-button");
-  b.innerHTML = `♪ <span>音效${soundOn ? "开" : "关"}</span>`;
-  b.setAttribute("aria-label", `${soundOn ? "关闭" : "开启"}游戏音效`);
+  b.innerHTML = localizeHTML(`♪ <span>音效${soundOn ? "开" : "关"}</span>`);
+  b.setAttribute("aria-label", t(`${soundOn ? "关闭" : "开启"}游戏音效`));
   b.setAttribute("aria-pressed", String(soundOn));
 }
 function playSound(type = "trade") {
@@ -392,13 +426,15 @@ function playSound(type = "trade") {
 function celebrate() {
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const colors = ["#c4ef80", "#f0c878", "#9cd7cf", "#c4b0e7"];
-  $("confetti").innerHTML = Array.from(
-    { length: 22 },
-    (_, i) =>
-      `<i style="--x:${(i * 47 + 11) % 100}%;--delay:${(i % 5) * 0.07}s;--color:${colors[i % colors.length]};--turn:${i % 2 ? 400 : -330}deg"></i>`,
-  ).join("");
+  $("confetti").innerHTML = localizeHTML(
+    Array.from(
+      { length: 22 },
+      (_, i) =>
+        `<i style="--x:${(i * 47 + 11) % 100}%;--delay:${(i % 5) * 0.07}s;--color:${colors[i % colors.length]};--turn:${i % 2 ? 400 : -330}deg"></i>`,
+    ).join(""),
+  );
   setTimeout(() => {
-    $("confetti").innerHTML = "";
+    $("confetti").innerHTML = localizeHTML("");
   }, 2000);
 }
 function renderGame() {
@@ -406,19 +442,23 @@ function renderGame() {
     gain = (assets / INITIAL_CASH - 1) * 100;
   const rivals = rivalsOf(state),
     place = rivals.findIndex((r) => r.player) + 1;
-  $("trader-rank").textContent = traderRank(state);
-  $("player-status").textContent = state.finished
-    ? `最终排名第 ${place} · 收益 ${signed(gain)}%`
-    : `街区排名第 ${place} · 已解锁 ${state.achievements.length} / 4 个成就`;
-  $("mascot-speech").textContent = state.finished
-    ? "收工！下局再战。"
-    : gain >= 10
-      ? "好家伙，你会玩！"
-      : gain < -5
-        ? "稳住，还有底牌。"
-        : state.trades.length
-          ? "别上头，牌要用对。"
-          : "先选股，再出牌！";
+  $("trader-rank").textContent = t(traderRank(state));
+  $("player-status").textContent = t(
+    state.finished
+      ? `最终排名第 ${place} · 收益 ${signed(gain)}%`
+      : `街区排名第 ${place} · 已解锁 ${state.achievements.length} / 4 个成就`,
+  );
+  $("mascot-speech").textContent = t(
+    state.finished
+      ? "收工！下局再战。"
+      : gain >= 10
+        ? "好家伙，你会玩！"
+        : gain < -5
+          ? "稳住，还有底牌。"
+          : state.trades.length
+            ? "别上头，牌要用对。"
+            : "先选股，再出牌！",
+  );
   const stages = [
     [1, "小散入市"],
     [5, "初试锋芒"],
@@ -427,40 +467,48 @@ function renderGame() {
     [30, "股神之夜"],
   ];
   const current = stages.findLastIndex(([day]) => day <= state.day);
-  $("quest-route").innerHTML = stages
-    .map(
-      ([day, name], i) =>
-        `<div class="route-stop ${i === current ? "current" : ""} ${day <= state.day ? "unlocked" : ""}"><span class="route-point">${day < state.day ? icon("check") : day === 30 ? icon("cup") : String(day).padStart(2, "0")}</span><div><strong>${name}</strong><span>${day === 30 ? "终极结算" : day === 1 ? "拿起你的第一手" : "抵达领取卡牌"}</span></div></div>`,
-    )
-    .join("");
-  $("rival-list").innerHTML = rivals
-    .map(
-      (r, i) =>
-        `<div class="rival-row ${r.player ? "is-player" : ""}"><span class="rival-place">${i + 1}</span><span class="rival-face rival-face-${r.face}">${r.face}</span><div class="rival-name"><strong>${r.name}${r.player ? " <em>YOU</em>" : ""}</strong><span>${r.style}</span></div><span class="rival-return ${direction(r.assets - INITIAL_CASH)}">${signed((r.assets / INITIAL_CASH - 1) * 100)}%</span></div>`,
-    )
-    .join("");
-  $("rival-taunt").textContent =
+  $("quest-route").innerHTML = localizeHTML(
+    stages
+      .map(
+        ([day, name], i) =>
+          `<div class="route-stop ${i === current ? "current" : ""} ${day <= state.day ? "unlocked" : ""}"><span class="route-point">${day < state.day ? icon("check") : day === 30 ? icon("cup") : String(day).padStart(2, "0")}</span><div><strong>${name}</strong><span>${day === 30 ? "终极结算" : day === 1 ? "拿起你的第一手" : "抵达领取卡牌"}</span></div></div>`,
+      )
+      .join(""),
+  );
+  $("rival-list").innerHTML = localizeHTML(
+    rivals
+      .map(
+        (r, i) =>
+          `<div class="rival-row ${r.player ? "is-player" : ""}"><span class="rival-place">${i + 1}</span><span class="rival-face rival-face-${r.face}">${r.face}</span><div class="rival-name"><strong>${r.name}${r.player ? " <em>YOU</em>" : ""}</strong><span>${r.style}</span></div><span class="rival-return ${direction(r.assets - INITIAL_CASH)}">${signed((r.assets / INITIAL_CASH - 1) * 100)}%</span></div>`,
+      )
+      .join(""),
+  );
+  $("rival-taunt").textContent = t(
     place === 1
       ? "老王：“可以啊，今天你是这条街的首富。”"
-      : "老王：“小伙子，想追上我，还得有点胆量。”";
-  $("card-count").textContent =
-    `${Object.values(state.cards).reduce((a, n) => a + n, 0)} 张可用`;
-  $("strategy-deck").innerHTML = Object.entries(CARDS)
-    .map(([id, c]) => {
-      const used =
-        id === "shield"
-          ? state.active.shield
-          : id === "rally"
-            ? state.active.rally
-            : false;
-      const disabled =
-        !state.cards[id] ||
-        !!used ||
-        state.finished ||
-        state.day === TOTAL_DAYS;
-      return `<button class="strategy-card card-${id} ${used ? "is-activated" : ""}" data-card="${id}" ${disabled ? "disabled" : ""} aria-label="${c.name}，剩余 ${state.cards[id]} 张，${c.subtitle}"><span class="card-icon">${cardIcons[id]}</span><span class="card-copy"><strong>${c.name}<span>×${state.cards[id]}</span></strong><span>${used ? "本日已生效 · 等待明日结算" : c.subtitle}</span></span><span class="card-play">${used ? "已装备" : "出牌"}${icon("chevron")}</span></button>`;
-    })
-    .join("");
+      : "老王：“小伙子，想追上我，还得有点胆量。”",
+  );
+  $("card-count").textContent = t(
+    `${Object.values(state.cards).reduce((a, n) => a + n, 0)} 张可用`,
+  );
+  $("strategy-deck").innerHTML = localizeHTML(
+    Object.entries(CARDS)
+      .map(([id, c]) => {
+        const used =
+          id === "shield"
+            ? state.active.shield
+            : id === "rally"
+              ? state.active.rally
+              : false;
+        const disabled =
+          !state.cards[id] ||
+          !!used ||
+          state.finished ||
+          state.day === TOTAL_DAYS;
+        return `<button class="strategy-card card-${id} ${used ? "is-activated" : ""}" data-card="${id}" ${disabled ? "disabled" : ""} aria-label="${c.name}，剩余 ${state.cards[id]} 张，${c.subtitle}"><span class="card-icon">${cardIcons[id]}</span><span class="card-copy"><strong>${c.name}<span>×${state.cards[id]}</span></strong><span>${used ? "本日已生效 · 等待明日结算" : c.subtitle}</span></span><span class="card-play">${used ? "已装备" : "出牌"}${icon("chevron")}</span></button>`;
+      })
+      .join(""),
+  );
   const effects = [];
   if (state.active.shield)
     effects.push(`${icon("check")}金钟罩：亏损返还已就绪`);
@@ -473,16 +521,19 @@ function renderGame() {
       `${cardIcons.radar}雷达透视：${STOCKS.find((s) => s.id === state.reveal.id).name} 明日 ${signed(state.reveal.change)}%`,
     );
   $("active-effects").hidden = effects.length === 0;
-  $("active-effects").innerHTML = effects
-    .map((e) => `<span>${e}</span>`)
-    .join("");
-  $("mobile-next-day").querySelector("span").textContent = state.finished
-    ? "查看战绩"
-    : state.day === 30
-      ? "收官 · 看战绩"
-      : "收盘 · 抽事件";
-  $("achievement-button").innerHTML =
-    `${icon("cup")}成就 ${state.achievements.length}/4`;
+  $("active-effects").innerHTML = localizeHTML(
+    effects.map((e) => `<span>${e}</span>`).join(""),
+  );
+  $("mobile-next-day").querySelector("span").textContent = t(
+    state.finished
+      ? "查看战绩"
+      : state.day === 30
+        ? "收官 · 看战绩"
+        : "收盘 · 抽事件",
+  );
+  $("achievement-button").innerHTML = localizeHTML(
+    `${icon("cup")}成就 ${state.achievements.length}/4`,
+  );
   $("report-button").hidden = !state.report;
 }
 function advance() {
@@ -500,77 +551,89 @@ function advance() {
     return;
   }
   const event = encounterFor(state);
-  $("event-tag").textContent = event.boss
-    ? `关卡 BOSS · 第 ${state.day + 1} 天`
-    : "隔夜事件 · 老王的战书";
-  $("encounter-title").textContent = event.title;
-  $("encounter-description").textContent = event.description;
-  $("event-reward").textContent = `¥${integer(event.reward)}`;
-  $("event-stake").textContent = `¥${integer(event.stake)}`;
+  $("event-tag").textContent = t(
+    event.boss ? `关卡 BOSS · 第 ${state.day + 1} 天` : "隔夜事件 · 老王的战书",
+  );
+  $("encounter-title").textContent = t(event.title);
+  $("encounter-description").textContent = t(event.description);
+  $("event-reward").textContent = t(`¥${integer(event.reward)}`);
+  $("event-stake").textContent = t(`¥${integer(event.stake)}`);
   document.querySelectorAll("[data-choice]").forEach((b) => {
     b.disabled = b.dataset.choice !== "pass" && state.cash < event.stake;
   });
-  $("encounter-cash").textContent =
+  $("encounter-cash").textContent = t(
     state.cash < event.stake
       ? `可用资金 ¥${fmt(state.cash)} · 不足以支付挑战金，可免费跳过。`
-      : `可用资金 ¥${fmt(state.cash)} · 挑战可自由跳过，涨跌以明日收盘价计算。`;
-  $("encounter-dialog").showModal();
+      : `可用资金 ¥${fmt(state.cash)} · 挑战可自由跳过，涨跌以明日收盘价计算。`,
+  );
+  if (!$("encounter-dialog").open) $("encounter-dialog").showModal();
 }
 function showDayReport() {
   const r = state.report;
   if (!r) return;
-  $("report-day").textContent =
-    `DAY ${String(r.day).padStart(2, "0")} UNLOCKED`;
-  $("report-verdict").innerHTML =
-    r.gain > 0 ? icon("cup") : r.gain < 0 ? cardIcons.shield : icon("clock");
-  $("report-headline").textContent =
+  $("report-day").textContent = t(
+    `DAY ${String(r.day).padStart(2, "0")} UNLOCKED`,
+  );
+  $("report-verdict").innerHTML = localizeHTML(
+    r.gain > 0 ? icon("cup") : r.gain < 0 ? cardIcons.shield : icon("clock"),
+  );
+  $("report-headline").textContent = t(
     r.gain > 2000
       ? "这波操作，有点东西！"
       : r.gain > 0
         ? "又赚到了，漂亮。"
         : r.gain < 0
           ? "市场挨了一拳，你还站着。"
-          : "蓄势待发，下一手见。";
-  $("report-profit").textContent = `${signed(r.gain)}`;
+          : "蓄势待发，下一手见。",
+  );
+  $("report-profit").textContent = t(`${signed(r.gain)}`);
   $("report-profit").className = `report-profit ${direction(r.gain)}`;
   const stock = STOCKS.find((s) => s.id === r.focus);
   const choiceText =
     r.choice === "pass"
       ? "你选择了稳住，没有接招。"
       : `${stock.name} ${signed(r.movement)}% · 你${r.choice === "long" ? "看涨" : "看跌"}，${r.won ? "判断正确！" : "这次猜错了。"}`;
-  $("report-details").innerHTML =
-    `<div><span>持仓涨跌</span><strong class="${direction(r.marketGain)}">${signed(r.marketGain)}</strong></div><div><span>事件挑战</span><strong class="${direction(r.eventBonus)}">${signed(r.eventBonus)}</strong></div>${r.shieldBonus ? `<div><span>金钟罩补贴</span><strong>+${fmt(r.shieldBonus)}</strong></div>` : ""}<p>${choiceText}</p>`;
+  $("report-details").innerHTML = localizeHTML(
+    `<div><span>持仓涨跌</span><strong class="${direction(r.marketGain)}">${signed(r.marketGain)}</strong></div><div><span>事件挑战</span><strong class="${direction(r.eventBonus)}">${signed(r.eventBonus)}</strong></div>${r.shieldBonus ? `<div><span>金钟罩补贴</span><strong>+${fmt(r.shieldBonus)}</strong></div>` : ""}<p>${choiceText}</p>`,
+  );
   $("report-rewards").hidden = !r.rewards.length;
-  $("report-rewards").textContent = `奖励到账 · ${r.rewards.join(" / ")}`;
-  $("report-taunt").textContent =
+  $("report-rewards").textContent = t(`奖励到账 · ${r.rewards.join(" / ")}`);
+  $("report-taunt").textContent = t(
     r.gain > 0
       ? "老王：“这次算你厉害。下一天，可没这么简单。”"
-      : "小牛：“别上头，先想想你手里还剩什么牌。”";
+      : "小牛：“别上头，先想想你手里还剩什么牌。”",
+  );
   if (!$("day-dialog").open) $("day-dialog").showModal();
 }
 function showAchievements() {
-  $("achievements-content").innerHTML = Object.entries(ACHIEVEMENTS)
-    .map(
-      ([id, a]) =>
-        `<div class="achievement-row ${state.achievements.includes(id) ? "earned" : ""}"><span>${icon(state.achievements.includes(id) ? "check" : "cup")}</span><div><strong>${a.title}</strong><p>${a.description}</p></div><span>${CARDS[a.card].name} +1</span></div>`,
-    )
-    .join("");
-  $("achievements-dialog").showModal();
+  $("achievements-content").innerHTML = localizeHTML(
+    Object.entries(ACHIEVEMENTS)
+      .map(
+        ([id, a]) =>
+          `<div class="achievement-row ${state.achievements.includes(id) ? "earned" : ""}"><span>${icon(state.achievements.includes(id) ? "check" : "cup")}</span><div><strong>${a.title}</strong><p>${a.description}</p></div><span>${CARDS[a.card].name} +1</span></div>`,
+      )
+      .join(""),
+  );
+  if (!$("achievements-dialog").open) $("achievements-dialog").showModal();
 }
 $("strategy-deck").addEventListener("click", (e) => {
   const b = e.target.closest("[data-card]");
   if (!b || b.disabled) return;
   chosenCard = b.dataset.card;
+  showCard();
+});
+function showCard() {
   const card = CARDS[chosenCard];
-  $("card-modal-title").textContent = card.name;
-  $("card-modal-icon").innerHTML = cardIcons[chosenCard];
-  $("card-modal-description").textContent = card.description;
-  $("card-modal-target").textContent =
+  $("card-modal-title").textContent = t(card.name);
+  $("card-modal-icon").innerHTML = localizeHTML(cardIcons[chosenCard]);
+  $("card-modal-description").textContent = t(card.description);
+  $("card-modal-target").textContent = t(
     chosenCard === "shield"
       ? "作用范围：全部持仓 · 下个交易日生效"
-      : `作用股票：${STOCKS.find((s) => s.id === selected).name} · ${chosenCard === "radar" ? "立即获得预测" : "下个交易日生效"}`;
-  $("card-dialog").showModal();
-});
+      : `作用股票：${STOCKS.find((s) => s.id === selected).name} · ${chosenCard === "radar" ? "立即获得预测" : "下个交易日生效"}`,
+  );
+  if (!$("card-dialog").open) $("card-dialog").showModal();
+}
 $("confirm-card").addEventListener("click", () => {
   const result = useCard(state, chosenCard, selected);
   $("card-dialog").close();
@@ -668,7 +731,11 @@ function drawChart() {
     ctx.setLineDash([]);
     ctx.fillStyle = "#617174";
     ctx.textAlign = "left";
-    ctx.fillText((max - ((max - min) * i) / 4).toFixed(2), w - right + 8, gy);
+    ctx.fillText(
+      t((max - ((max - min) * i) / 4).toFixed(2)),
+      w - right + 8,
+      gy,
+    );
   }
   [0, Math.floor(count / 3), Math.floor((count * 2) / 3), count - 1].forEach(
     (i) => {
@@ -681,9 +748,11 @@ function drawChart() {
       ctx.textAlign = "center";
       const day = start + i - 38;
       ctx.fillText(
-        day > 0
-          ? `D${String(day).padStart(2, "0")}`
-          : `历史 ${Math.abs(day) + 1}`,
+        t(
+          day > 0
+            ? `D${String(day).padStart(2, "0")}`
+            : `历史 ${Math.abs(day) + 1}`,
+        ),
         x(i),
         h - 8,
       );
@@ -742,7 +811,7 @@ function drawChart() {
   ctx.fillStyle = "#5f7372";
   ctx.textAlign = "left";
   ctx.font = `8px 'DM Sans', sans-serif`;
-  ctx.fillText("VOL", left, volumeTop - 9);
+  ctx.fillText(t("VOL"), left, volumeTop - 9);
   data.forEach((c, i) => {
     ctx.fillStyle = c.close >= c.open ? "#eb8b834b" : "#6cb99a4b";
     const height = (c.volume / maxVolume) * (volumeBottom - volumeTop);
@@ -766,7 +835,7 @@ function drawChart() {
   ctx.fillRect(w - right + 3, py - 9, right - 4, 18);
   ctx.fillStyle = "#cce4b8";
   ctx.font = `${fontSize}px 'DM Sans', sans-serif`;
-  ctx.fillText(last.close.toFixed(2), w - right + 7, py);
+  ctx.fillText(t(last.close.toFixed(2)), w - right + 7, py);
   if (hover >= 0 && hover < count) {
     ctx.setLineDash([3, 3]);
     ctx.strokeStyle = "#a7b6a080";
@@ -870,7 +939,9 @@ chart.addEventListener("pointermove", (e) => {
   updateOhlc(candle);
   const tooltip = $("chart-tooltip");
   tooltip.hidden = false;
-  tooltip.textContent = `${day > 0 ? `第 ${day} 个交易日` : "开局前历史行情"} · ¥${fmt(candle.close)}`;
+  tooltip.textContent = t(
+    `${day > 0 ? `第 ${day} 个交易日` : "开局前历史行情"} · ¥${fmt(candle.close)}`,
+  );
   tooltip.style.left = `${Math.min(Math.max(0, px - 70), width - Math.min(210, width))}px`;
   tooltip.style.top = "8px";
   drawChart();
@@ -950,3 +1021,17 @@ window.addEventListener("storage", (e) => {
 render();
 save();
 if (storageWarning) toast("当前浏览器无法保存进度，请保持页面开启。", true);
+
+// Re-render labels only; switching language never advances or resets a round.
+onLanguageChange(() => {
+  render();
+  renderSound();
+  $("chart-tooltip").hidden = true;
+  if (lastToast && !$("toast").hidden)
+    $("toast").textContent = t(lastToast.message);
+  if ($("card-dialog").open) showCard();
+  if ($("encounter-dialog").open) advance();
+  if ($("day-dialog").open) showDayReport();
+  if ($("achievements-dialog").open) showAchievements();
+  if ($("result-dialog").open) showResult({ persistBest: false });
+});

@@ -14,6 +14,7 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>牛市闯关 · BULL RUN</title>
     <link rel="stylesheet" href="/games/bull-run/style.css" />
+    <link rel="stylesheet" href="/shared/language.css" />
   </head>
   <body class="game-expanded">
     <main class="shell">
@@ -22,6 +23,14 @@
           ><span class="brand-icon">↗</span
           ><span>BULL<span class="brand-light"> / RUN</span></span></a
         ><a class="lobby-link header-lobby" href="/">游戏大厅</a>
+        <button
+          type="button"
+          class="language-switch"
+          data-language-switch
+          aria-label="Switch to English"
+        >
+          EN
+        </button>
         <div class="edition">
           <span class="dot"></span> 像素交易所 · 虚构市场
         </div>
@@ -65,6 +74,14 @@
           >
         </div>
         <div id="stage" class="stage is-expanded fullscreen-active">
+          <button
+            type="button"
+            class="language-switch stage-language-switch"
+            data-language-switch
+            aria-label="Switch to English"
+          >
+            EN
+          </button>
           <div class="stage-tools" aria-label="全屏游戏工具">
             <a class="lobby-link" href="/">游戏大厅</a
             ><button id="stage-pause" title="暂停或继续 (P)">暂停 Ⅱ</button
@@ -144,6 +161,6 @@
         ><span>行情图形及收益筹码均为虚构 · 游戏积分不代表投资收益</span>
       </footer>
     </main>
-    <script src="/games/bull-run/game.js"></script>
+    <script type="module" src="/games/bull-run/game.js"></script>
   </body>
 </html>

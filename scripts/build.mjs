@@ -11,6 +11,7 @@ const sources = [
   "_headers",
   "assets",
   "games",
+  "shared",
 ];
 try {
   await Promise.all(

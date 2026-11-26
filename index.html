@@ -11,6 +11,8 @@
     <title>LC 小游戏厅 · 换个方式玩市场</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="home.css" />
+    <link rel="stylesheet" href="/shared/language.css" />
+    <script type="module" src="/shared/language-ui.mjs"></script>
   </head>
   <body>
     <div class="lobby-shell">
@@ -23,7 +25,17 @@
               <circle cx="24" cy="6" r="2" /></svg></span
           ><span>LC 小游戏厅<small>AFTER HOURS ARCADE</small></span></a
         >
-        <span class="header-note">小小的游戏，大大的快乐。</span>
+        <div class="lobby-header-actions">
+          <span class="header-note">小小的游戏，大大的快乐。</span
+          ><button
+            type="button"
+            class="language-switch"
+            data-language-switch
+            aria-label="Switch to English"
+          >
+            EN
+          </button>
+        </div>
       </header>
       <main>
         <section class="lobby-intro" aria-labelledby="lobby-title">

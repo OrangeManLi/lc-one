@@ -1,0 +1,333 @@
+.language-switch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  min-height: 34px;
+  padding: 5px 9px;
+  border: 1px solid #56684b;
+  border-radius: 6px;
+  background: #c4ef8008;
+  color: #c4dfaa;
+  font:
+    600 12px/1.4 -apple-system,
+    BlinkMacSystemFont,
+    "PingFang SC",
+    sans-serif;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.language-switch:hover {
+  background: #c4ef801a;
+  border-color: #acc684;
+}
+.language-switch:focus-visible {
+  outline: 2px solid #c4ef80;
+  outline-offset: 3px;
+}
+.lobby-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+.stage-language-switch {
+  position: absolute;
+  right: max(16px, env(safe-area-inset-right));
+  top: max(14px, env(safe-area-inset-top));
+  z-index: 12;
+  background: #102b38e8;
+  border-color: #749c8d;
+  color: #d4eddd;
+  min-height: 34px;
+}
+.modal {
+  padding-top: 56px;
+}
+.modal > .language-switch {
+  position: absolute;
+  top: 15px;
+  right: 54px;
+  min-height: 27px;
+  padding: 3px 8px;
+  font-size: 11px;
+}
+html[lang="en"] .wordmark > span {
+  display: none;
+}
+html[lang="en"] .quest-copy > h2 {
+  font-size: 28px;
+  letter-spacing: 0;
+}
+html[lang="en"] .quest-copy > p {
+  max-width: 260px;
+}
+html[lang="en"] .quest-tag {
+  letter-spacing: 0;
+}
+html[lang="en"] .player-badge > div > span {
+  font-size: 10px;
+}
+html[lang="en"] .rival-heading {
+  align-items: flex-start;
+}
+html[lang="en"] .rival-heading > h2 {
+  font-size: 12px;
+}
+html[lang="en"] .rival-heading > span {
+  white-space: nowrap;
+  font-size: 9px;
+}
+html[lang="en"] .rival-name > strong {
+  font-size: 12px;
+}
+html[lang="en"] .rival-name > span {
+  font-size: 9px;
+}
+html[lang="en"] .strategy-heading > div > span {
+  font-size: 10px;
+}
+html[lang="en"] .card-copy > span {
+  white-space: normal;
+  line-height: 1.6;
+}
+html[lang="en"] .chart-ohlc {
+  gap: 8px;
+}
+html[lang="en"] .quantity-presets button {
+  font-size: 12px;
+}
+html[lang="en"] .metric-value {
+  letter-spacing: -0.8px;
+}
+html[lang="en"] .game-tags {
+  gap: 5px;
+}
+html[lang="en"] .game-tags > span {
+  font-size: 10px;
+}
+html[lang="en"] .game-bottom {
+  flex-wrap: wrap;
+}
+html[lang="en"] .game-info p {
+  min-height: 80px;
+}
+html[lang="en"] .challenge-description h3 {
+  font-size: 16px;
+}
+html[lang="en"] .stage-tools button,
+html[lang="en"] .stage-tools .lobby-link {
+  font-size: 11px;
+}
+html[lang="en"] .overlay-hint:after {
+  content: none;
+}
+@media (pointer: coarse) {
+  html[lang="en"] .overlay-hint:after {
+    content: "Use on-screen buttons to move, sprint, and jump";
+    font-size: 10px;
+  }
+}
+@media (max-width: 760px) {
+  .lobby-header-actions {
+    gap: 12px;
+  }
+  .lobby-header-actions .header-note {
+    display: none;
+  }
+  .top-actions {
+    gap: 10px;
+  }
+  .language-switch {
+    min-width: 38px;
+    min-height: 30px;
+    padding: 4px 8px;
+  }
+  html[lang="en"] .intro > div > h1 {
+    font-size: 24px;
+  }
+  html[lang="en"] .quest-copy > h2 {
+    font-size: 25px;
+  }
+  html[lang="en"] .strategy-meta {
+    gap: 9px;
+  }
+  html[lang="en"] .strategy-meta > span {
+    font-size: 9px;
+  }
+  html[lang="en"] .strategy-heading > div > span {
+    display: none;
+  }
+  html[lang="en"] .game-info p {
+    min-height: 0;
+  }
+  html[lang="en"] .card-copy > strong {
+    font-size: 12px;
+  }
+  html[lang="en"] .card-copy > strong > span {
+    font-size: 9px;
+    margin-left: 4px;
+  }
+}
+@media (max-width: 540px) {
+  .top-actions {
+    gap: 8px;
+  }
+  html[lang="en"] .wordmark {
+    font-size: 15px;
+    letter-spacing: 0;
+  }
+  html[lang="en"] .quest-copy > h2 {
+    font-size: 22px;
+    line-height: 1.45;
+  }
+  html[lang="en"] .quest-copy > p {
+    max-width: 170px;
+    font-size: 10px;
+  }
+  html[lang="en"] .quest-tag {
+    font-size: 9px;
+    gap: 4px;
+  }
+  html[lang="en"] .quest-tag > span:last-child {
+    font-size: 7px;
+  }
+  html[lang="en"] .route-stop strong {
+    font-size: 8px;
+  }
+  html[lang="en"] .rival-name > strong {
+    font-size: 10px;
+  }
+  html[lang="en"] .rival-name > span {
+    font-size: 8px;
+  }
+  html[lang="en"] .player-badge > div > span {
+    font-size: 8px;
+    max-width: 165px;
+  }
+  html[lang="en"] .card-copy > strong {
+    font-size: 11px;
+  }
+  html[lang="en"] .card-copy > span {
+    font-size: 9px;
+  }
+  html[lang="en"] .card-copy > strong > span {
+    font-size: 8px;
+    margin-left: 3px;
+  }
+  html[lang="en"] .strategy-heading h2 {
+    font-size: 12px;
+  }
+  html[lang="en"] .strategy-meta > span {
+    display: none;
+  }
+  html[lang="en"] .encounter-options strong {
+    font-size: 12px;
+  }
+  html[lang="en"] .news-footer {
+    gap: 7px;
+  }
+  html[lang="en"] .game-tags > span {
+    font-size: 10px;
+  }
+  html[lang="en"] .order-note {
+    font-size: 10px;
+  }
+  .stage-language-switch {
+    top: 10px;
+    right: 10px;
+    min-height: 29px;
+    font-size: 11px;
+  }
+}
+
+html[lang="en"] .rival-name em {
+  display: none;
+}
+/* English labels are longer; keep small-screen grids within the viewport. */
+html[lang="en"] .rival-panel,
+html[lang="en"] .rival-name,
+html[lang="en"] .route-stop,
+html[lang="en"] .route-stop > div {
+  min-width: 0;
+}
+html[lang="en"] .rival-face,
+html[lang="en"] .rival-place,
+html[lang="en"] .rival-return {
+  flex-shrink: 0;
+}
+html[lang="en"] .rival-name > strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 760px) {
+  html[lang="en"] #rival-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 540px) {
+  html[lang="en"] .day-label {
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-size: 11px;
+  }
+  html[lang="en"] .day-label > span {
+    display: none;
+  }
+  html[lang="en"] .session-control {
+    gap: 10px;
+  }
+  html[lang="en"] .session-control .primary-button {
+    white-space: nowrap;
+    font-size: 11px;
+    gap: 10px;
+  }
+  html[lang="en"] .quest-scene {
+    min-height: 260px;
+  }
+  html[lang="en"] .quest-copy {
+    width: 59%;
+  }
+  html[lang="en"] .quest-copy > h2 {
+    font-size: 20px;
+    line-height: 1.45;
+  }
+  html[lang="en"] .quest-copy > p {
+    max-width: 165px;
+  }
+  html[lang="en"] .mascot-scene {
+    width: 175px;
+    max-width: 46%;
+    right: -6px;
+    top: auto;
+    bottom: 21px;
+    height: 180px;
+  }
+  html[lang="en"] .speech-bubble {
+    right: 12px;
+    top: -2px;
+    max-width: 130px;
+    white-space: normal;
+    text-align: center;
+    font-size: 9px;
+  }
+  html[lang="en"] .route-stop > div {
+    width: 100%;
+  }
+  html[lang="en"] .route-stop strong {
+    font-size: 8px;
+    white-space: normal;
+  }
+  html[lang="en"] .rival-return {
+    font-size: 10px;
+  }
+  html[lang="en"] .rival-name > strong {
+    font-size: 10px;
+    max-width: 100%;
+  }
+  html[lang="en"] .rival-face {
+    width: 20px;
+    height: 22px;
+  }
+}
