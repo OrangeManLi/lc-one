@@ -8,6 +8,7 @@ const pages = [
   "index.html",
   "games/trader-quest/index.html",
   "games/bull-run/index.html",
+  "privacy/index.html",
 ];
 
 test("the lobby offers both independent game entry points", async () => {
@@ -35,7 +36,7 @@ test("every local link and asset resolves from all three pages", async () => {
 });
 
 test("each game offers a visible lobby link, including Bull Run's expanded stage", async () => {
-  for (const page of pages.slice(1)) {
+  for (const page of pages.slice(1, 3)) {
     const html = await readFile(path.join(root, page), "utf8");
     assert.match(html, /href="\/"[^>]*>\s*游戏大厅/);
   }

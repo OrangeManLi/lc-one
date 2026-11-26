@@ -1,4 +1,27 @@
 export default {
+  广告: "Advertisement",
+  隐私说明: "Privacy",
+  "隐私说明 · LC 小游戏厅": "Privacy · LC Arcade",
+  "更新日期：2026 年 11 月 26 日": "Updated: November 26, 2026",
+  游戏存档与语言偏好: "Game saves and language preferences",
+  "游戏进度、最高分、音效设置和语言偏好保存在当前浏览器的本地存储中。本站没有注册或登录功能，也不会将这些存档上传到服务器。你可以在浏览器的网站设置中清除本地数据；清除后，游戏进度和设置将重置。":
+    "Game progress, high scores, sound settings and language preferences are stored locally in your current browser. This site has no registration or sign-in and does not upload these saves to a server. You can clear local data in your browser's site settings; doing so resets your progress and preferences.",
+  网站访问: "Site visits",
+  "本站使用 Cloudflare 托管和提供网站服务。处理访问请求时，服务提供方可能处理 IP 地址、浏览器信息、请求网址和时间，用于内容交付、安全防护和流量统计。":
+    "This site uses Cloudflare for hosting and delivery. When handling requests, the service provider may process IP addresses, browser information, requested URLs and timestamps for content delivery, security and traffic statistics.",
+  "Cloudflare 隐私政策": "Cloudflare Privacy Policy",
+  首页广告: "Homepage advertising",
+  "首页预留了 Google AdSense 展示广告位。广告服务启用后，Google 及其合作伙伴可能使用 Cookie、网络信标和 IP 地址等信息展示和衡量广告；也可能依据你此前对本站或其他网站的访问展示个性化广告。未启用广告服务时，本站不会加载 Google 广告脚本。":
+    "The homepage has a reserved Google AdSense display ad placement. When advertising is enabled, Google and its partners may use cookies, web beacons, IP addresses and other information to serve and measure ads, including personalized ads based on your previous visits to this or other websites. When advertising is disabled, this site does not load Google's ad script.",
+  "你可以通过 Google 广告设置管理个性化广告。适用地区的广告同意选择由广告服务的隐私消息提供；拒绝个性化广告不会限制游戏功能。":
+    "You can manage personalized advertising in Google's ad settings. In applicable regions, consent choices are provided through the ad service's privacy messages. Declining personalized advertising does not restrict the games.",
+  "Google 广告设置": "Google ad settings",
+  "Google 如何使用合作伙伴网站的信息": "How Google uses information from partner sites",
+  其他参与广告公司的退出选项: "Opt-out choices for other participating ad companies",
+  联系: "Contact",
+  "如果对本站的数据处理有疑问，可以通过项目公开反馈入口联系维护者。请不要在公开反馈中填写密码、游戏存档或其他个人敏感信息。":
+    "For questions about this site's data practices, contact the maintainer through the project's public issue tracker. Do not post passwords, game saves or other sensitive personal information in public issues.",
+  项目反馈: "Project feedback",
   "LC 小游戏厅": "LC Arcade",
   "LC 小游戏厅 · 换个方式玩市场": "LC Arcade · Play the Market",
   "LC 小游戏厅首页": "LC Arcade home",

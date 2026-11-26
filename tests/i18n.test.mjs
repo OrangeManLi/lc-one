@@ -33,6 +33,7 @@ test("all three pages have complete English text and accessible labels", async (
     "index.html",
     "games/trader-quest/index.html",
     "games/bull-run/index.html",
+    "privacy/index.html",
   ]) {
     const html = await readFile(new URL("../" + file, import.meta.url), "utf8");
     for (const [, text] of html.matchAll(/>([^<>]+)</g))
