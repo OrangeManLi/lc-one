@@ -2,6 +2,6 @@
 // Keep disabled until lc-one.cn is approved and Privacy & messaging is configured.
 export default {
   enabled: false,
-  publisherId: "",
+  publisherId: "ca-pub-1021389829087686",
   homepageSlotId: "",
 };
