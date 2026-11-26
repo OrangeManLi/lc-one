@@ -11,7 +11,7 @@ npm run check
 npm test
 npm run build
 git status --short
-git add index.html styles.css app.mjs game.mjs mascot.svg favicon.svg
+git add index.html home.css games/ assets/ favicon.svg
 # 如果修改了其他文件，也应将对应文件加入提交。
 git commit -m "Describe the game change"
 git push origin main
@@ -21,7 +21,7 @@ git push origin main
 
 ## 发布内容
 
-`scripts/build.mjs` 只把页面、样式、游戏脚本、两个 SVG 和缓存头配置复制到 `dist/`。测试、文档和 Git 元数据不会发布。不要直接把整个仓库作为发布目录。
+`scripts/build.mjs` 把大厅页面、样式、预览插画、两个游戏目录和缓存头配置复制到 `dist/`。构建会替换旧发布目录，避免已迁移文件残留。测试、文档和 Git 元数据不会发布。不要直接把整个仓库作为发布目录。
 
 ## 配置
 

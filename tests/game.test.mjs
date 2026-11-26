@@ -10,7 +10,7 @@ import {
   feeOf,
   assetsOf,
   restoreGame,
-} from "../game.mjs";
+} from "../games/trader-quest/game.mjs";
 
 test("a new round has 100,000 cash and reproducible, valid fictional history", () => {
   const state = newGame(42);
@@ -152,7 +152,7 @@ test("long simulated rounds keep prices finite, in their daily price band and va
 });
 
 test("radar predicts the real next session without changing the random sequence or prices", async () => {
-  const { useCard, changeOf } = await import("../game.mjs");
+  const { useCard, changeOf } = await import("../games/trader-quest/game.mjs");
   const state = newGame(88),
     originalSeed = state.seed,
     originalMarket = structuredClone(state.market);
@@ -167,7 +167,7 @@ test("radar predicts the real next session without changing the random sequence 
   assert.equal(state.reveal, null);
 });
 test("rally boosts only the target, consumes one card and cannot stack in the same session", async () => {
-  const { useCard, changeOf } = await import("../game.mjs");
+  const { useCard, changeOf } = await import("../games/trader-quest/game.mjs");
   const regular = newGame(88),
     boosted = newGame(88);
   useCard(boosted, "rally", "nova");
@@ -185,7 +185,7 @@ test("rally boosts only the target, consumes one card and cannot stack in the sa
   assert.equal(boosted.cards.rally, 0);
 });
 test("shield refunds half of the net holding loss with a 3,000 cap and no duplicate use", async () => {
-  const { useCard } = await import("../game.mjs");
+  const { useCard } = await import("../games/trader-quest/game.mjs");
   let foundLoss = false;
   for (let seed = 1; seed < 30; seed++) {
     const state = newGame(seed);
@@ -207,7 +207,8 @@ test("shield refunds half of the net holding loss with a 3,000 cap and no duplic
   assert.ok(foundLoss);
 });
 test("event challenge settles exact winnings or losses, and insufficient cash cannot enter", async () => {
-  const { encounterFor, changeOf } = await import("../game.mjs");
+  const { encounterFor, changeOf } =
+    await import("../games/trader-quest/game.mjs");
   const preview = newGame(42),
     winning = newGame(42),
     losing = newGame(42);
@@ -249,7 +250,7 @@ test("achievements reward cards once and checkpoints grant supplies", () => {
   assert.ok(restoreGame(JSON.stringify(state)));
 });
 test("cards cannot be used on day 30 and corrupt card or event saves are rejected", async () => {
-  const { useCard } = await import("../game.mjs");
+  const { useCard } = await import("../games/trader-quest/game.mjs");
   const state = newGame(20);
   while (state.day < 30) nextDay(state);
   const snapshot = structuredClone(state);

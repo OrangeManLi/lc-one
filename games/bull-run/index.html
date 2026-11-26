@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="color-scheme" content="light dark" />
+    <meta
+      name="description"
+      content="跑进像素交易所，收集收益筹码、二段跳跃过 K 线、躲开空头熊，敲响胜利的开市钟。"
+    />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>牛市闯关 · BULL RUN</title>
+    <link rel="stylesheet" href="/games/bull-run/style.css" />
+  </head>
+  <body class="game-expanded">
+    <main class="shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="返回游戏大厅"
+          ><span class="brand-icon">↗</span
+          ><span>BULL<span class="brand-light"> / RUN</span></span></a
+        ><a class="lobby-link header-lobby" href="/">游戏大厅</a>
+        <div class="edition">
+          <span class="dot"></span> 像素交易所 · 虚构市场
+        </div>
+        <button
+          id="sound"
+          class="icon-button"
+          aria-label="开启游戏音效"
+          title="开启游戏音效"
+        >
+          音效 关
+        </button>
+      </header>
+      <section class="intro">
+        <div>
+          <p class="eyebrow">DODGE THE BEARS. CHASE THE BULL.</p>
+          <h1>穿越牛熊，<span>一路向上。</span></h1>
+          <p class="subtitle">
+            收集收益筹码，跃过 K 线障碍，冲向交易所的开市钟。
+          </p>
+        </div>
+        <div class="level-tag">
+          <span>↗</span>
+          <div>牛市闯关<small>THE PIXEL STOCK EXCHANGE</small></div>
+        </div>
+      </section>
+      <section class="game-card" aria-label="牛市闯关股票主题游戏">
+        <div class="game-toolbar">
+          <span
+            ><i class="live-light"></i> <span id="status">等待开市</span></span
+          ><span class="toolbar-actions"
+            ><button id="pause" title="暂停 / 继续 (P)">
+              暂停 <kbd>P</kbd></button
+            ><button id="restart" title="重新开始 (R)">重开 ↻</button
+            ><button
+              id="fullscreen"
+              title="退出全屏 (F / Esc)"
+              aria-pressed="true"
+            >
+              退出全屏 ⛶
+            </button></span
+          >
+        </div>
+        <div id="stage" class="stage is-expanded fullscreen-active">
+          <div class="stage-tools" aria-label="全屏游戏工具">
+            <a class="lobby-link" href="/">游戏大厅</a
+            ><button id="stage-pause" title="暂停或继续 (P)">暂停 Ⅱ</button
+            ><button id="stage-fullscreen" title="退出全屏 (F / Esc)">
+              退出全屏 ⛶
+            </button>
+          </div>
+          <canvas
+            id="game"
+            width="768"
+            height="432"
+            tabindex="0"
+            aria-label="牛市闯关，方向键移动，空格二段跳，长按空格落地连跳，Shift 加速，F 全屏。"
+          ></canvas>
+          <div id="overlay" class="overlay">
+            <div class="overlay-panel">
+              <div id="overlay-eyebrow" class="overlay-eyebrow">
+                BULL RUN / OPENING BELL
+              </div>
+              <h2 id="overlay-title">今天，你是多头主角。</h2>
+              <p id="overlay-copy">
+                踩住空头熊，跳过市场深坑。<br />收集筹码，去交易所敲响胜利的钟。
+              </p>
+              <button id="play" class="play-button">
+                开市出发 <span>↗</span>
+              </button>
+              <div id="overlay-hint" class="overlay-hint">
+                Enter 开始 · 空格二段跳 / 长按连跳 · F 全屏
+              </div>
+            </div>
+          </div>
+          <div class="touch-controls" aria-label="触屏游戏操作">
+            <div class="dpad">
+              <button data-key="left" aria-label="向左">◀</button
+              ><button data-key="right" aria-label="向右">▶</button>
+            </div>
+            <div class="action-pad">
+              <button data-key="run" class="run-key" aria-label="按住加速">
+                跑</button
+              ><button data-key="jump" class="jump-key" aria-label="跳跃及连跳">
+                跳
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="game-bottom">
+          <span><span class="tiny-coin"></span> 顶开消息盒，寻找“利好”护盾</span
+          ><span id="best">最高积分 —</span>
+        </div>
+      </section>
+      <div class="market-legend" aria-label="游戏道具说明">
+        <span><i class="legend-chip">$</i>收益筹码</span
+        ><span><i class="legend-candle"></i>K 线障碍</span
+        ><span><i class="legend-bear">▼</i>空头熊</span
+        ><span><i class="legend-news">↗</i>利好护盾</span
+        ><em>纯游戏主题 · 不接入真实行情</em>
+      </div>
+      <section class="below">
+        <div class="controls">
+          <span class="section-label">TRADING KEYS</span>
+          <div><kbd>←</kbd><kbd>→</kbd><span>移动</span></div>
+          <div><kbd>Space</kbd><span>跳跃</span></div>
+          <div><kbd>Shift</kbd><span>加速</span></div>
+          <div><kbd>P</kbd><span>暂停</span></div>
+        </div>
+        <div class="tip">
+          <span>↗</span>
+          <p>
+            跨过回撤深坑，踩住空头熊。<br /><strong
+              >空中再按一次可二段跳，长按落地连跳；F 切换全屏。</strong
+            >
+          </p>
+        </div>
+      </section>
+      <footer>
+        <span>STAY IN THE GAME. ENJOY THE RUN.</span
+        ><span>行情图形及收益筹码均为虚构 · 游戏积分不代表投资收益</span>
+      </footer>
+    </main>
+    <script src="/games/bull-run/game.js"></script>
+  </body>
+</html>

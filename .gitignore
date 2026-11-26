@@ -23,3 +23,6 @@ Desktop.ini
 
 # Static deployment output
 dist/
+
+# Temporary staged site builds
+.site-build-*/

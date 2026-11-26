@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "python3 -m http.server 4173 --bind 127.0.0.1",
     "test": "node --test tests/*.test.mjs",
-    "check": "node --check app.mjs && node --check game.mjs",
+    "check": "node --check games/trader-quest/app.mjs && node --check games/trader-quest/game.mjs && node --check games/bull-run/game.js",
     "build": "node scripts/build.mjs"
   }
 }

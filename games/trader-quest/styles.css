@@ -4247,3 +4247,25 @@ td small {
     margin-bottom: 0;
   }
 }
+
+.hall-link {
+  color: #b8c8a8;
+  font-size: 14px;
+  white-space: nowrap;
+  padding: 6px 10px;
+  border: 1px solid #3e4a36;
+  border-radius: 5px;
+}
+.hall-link:hover {
+  background: #c4ef8010;
+  color: #c4ef80;
+}
+@media (max-width: 540px) {
+  .hall-link {
+    font-size: 12px;
+    padding: 5px 7px;
+  }
+  .topbar .simulation {
+    display: none;
+  }
+}
