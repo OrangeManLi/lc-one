@@ -1,1022 +1,635 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>科技博客 - Tech Blog</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #0a0e27;
-            color: #ffffff;
-            overflow-x: hidden;
-        }
-
-        #canvas-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
-
-        .content {
-            position: relative;
-            z-index: 2;
-        }
-
-        header {
-            text-align: center;
-            padding: 100px 20px 50px;
-            margin: 0 auto;
-            max-width: 1200px;
-            background: transparent;
-        }
-
-        h1 {
-            font-size: 3.5em;
-            margin-bottom: 20px;
-            background: linear-gradient(45deg, #00ffff, #00ff88, #0088ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: glow 3s ease-in-out infinite;
-        }
-
-        @keyframes glow {
-            0%, 100% { filter: brightness(1); }
-            50% { filter: brightness(1.3); }
-        }
-
-        .subtitle {
-            font-size: 1.2em;
-            color: #00ffff;
-            margin-bottom: 10px;
-        }
-
-        .description {
-            color: #a0a0a0;
-            max-width: 600px;
-            margin: 0 auto;
-            line-height: 1.6;
-        }
-
-        .blog-section {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 420px;
-            max-height: 65vh;
-            background: rgba(20, 30, 60, 0.95);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(0, 255, 255, 0.3);
-            border-radius: 15px;
-            padding: 20px;
-            margin: 0;
-            transition: all 0.5s ease;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-            overflow: hidden;
-            z-index: 10;
-        }
-
-        .blog-section.collapsed {
-            padding: 15px 20px;
-            max-height: 60px;
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            margin-bottom: 20px;
-            user-select: none;
-        }
-
-        .section-header h2 {
-            color: #00ffff;
-            font-size: 1.3em;
-            margin: 0;
-        }
-
-        .toggle-btn {
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(45deg, #00ffff, #0088ff);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.3em;
-            color: #0a0e27;
-            transition: transform 0.3s;
-            font-weight: bold;
-        }
-
-        .toggle-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
-        }
-
-        .blog-content {
-            max-height: calc(65vh - 100px);
-            overflow-y: auto;
-            overflow-x: hidden;
-            transition: max-height 0.5s ease, opacity 0.5s ease;
-            opacity: 1;
-            padding-right: 10px;
-        }
-
-        .blog-content::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .blog-content::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 3px;
-        }
-
-        .blog-content::-webkit-scrollbar-thumb {
-            background: rgba(0, 255, 255, 0.3);
-            border-radius: 3px;
-        }
-
-        .blog-content::-webkit-scrollbar-thumb:hover {
-            background: rgba(0, 255, 255, 0.5);
-        }
-
-        .blog-content.hidden {
-            max-height: 0;
-            opacity: 0;
-            overflow: hidden;
-        }
-
-        .blog-post {
-            margin-bottom: 25px;
-            padding-bottom: 25px;
-            border-bottom: 1px solid rgba(0, 255, 255, 0.1);
-        }
-
-        .blog-post:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-
-        .blog-post h2 {
-            color: #00ffff;
-            margin-bottom: 8px;
-            font-size: 1.3em;
-        }
-
-        .post-meta {
-            color: #00ff88;
-            font-size: 0.8em;
-            margin-bottom: 12px;
-        }
-
-        .blog-post p {
-            line-height: 1.6;
-            color: #d0d0d0;
-            margin-bottom: 12px;
-            font-size: 0.9em;
-        }
-
-        .read-more {
-            display: inline-block;
-            padding: 8px 20px;
-            background: linear-gradient(45deg, #00ffff, #0088ff);
-            color: #0a0e27;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-            font-size: 0.85em;
-            transition: transform 0.3s;
-        }
-
-        .read-more:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
-        }
-
-        .tech-info {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid rgba(0, 255, 255, 0.3);
-            font-size: 0.9em;
-            z-index: 3;
-        }
-
-        .tech-info div {
-            margin: 5px 0;
-            color: #00ffff;
-        }
-
-        footer {
-            position: fixed;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
-            padding: 10px 20px;
-            background: rgba(10, 14, 39, 0.7);
-            border-radius: 20px;
-            font-size: 0.85em;
-            z-index: 2;
-        }
-
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 2.5em;
-            }
-
-            .blog-section {
-                bottom: 15px;
-                right: 15px;
-                left: 15px;
-                width: auto;
-                max-height: 50vh;
-            }
-
-            .tech-info {
-                font-size: 0.8em;
-                padding: 10px;
-            }
-
-            footer {
-                display: none;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div id="canvas-container"></div>
-
-    <div class="content">
-        <header>
-            <h1>科技前沿博客</h1>
-            <p class="subtitle">探索未来 | 拥抱科技</p>
-        </header>
-
-        <div class="blog-section collapsed" id="blogSection">
-            <div class="section-header" onclick="toggleBlog()">
-                <h2>📝 博客文章</h2>
-                <div class="toggle-btn" id="toggleBtn">+</div>
-            </div>
-            <div class="blog-content hidden" id="blogContent">
-                <div class="blog-post">
-                    <h2>Three.js 与现代Web 3D技术</h2>
-                    <p class="post-meta">2025年1月10日 | 技术分享</p>
-                    <p>Three.js 作为最流行的WebGL库之一，让在浏览器中创建复杂的3D场景变得简单。本文将探讨如何使用Three.js创建令人印象深刻的视觉效果，包括粒子系统、着色器编程和性能优化技巧。</p>
-                    <p>通过合理使用几何体、材质和光照，我们可以创建出既美观又高效的3D体验。本站背景中的人物模型就是使用Three.js技术实现的一个例子。</p>
-                    <a href="#" class="read-more">阅读全文</a>
-                </div>
-
-                <div class="blog-post">
-                    <h2>AI时代的Web开发</h2>
-                    <p class="post-meta">2025年1月8日 | 行业观察</p>
-                    <p>人工智能正在深刻改变Web开发的方式。从智能代码补全到自动化测试，AI工具正在提高开发者的生产力。但这并不意味着开发者会被取代，相反，我们需要学习如何更好地与AI协作。</p>
-                    <p>未来的Web应用将更加智能化、个性化。作为开发者，我们需要掌握AI集成技术，为用户创造更好的体验。</p>
-                    <a href="#" class="read-more">阅读全文</a>
-                </div>
-
-                <div class="blog-post">
-                    <h2>响应式设计的新思路</h2>
-                    <p class="post-meta">2025年1月5日 | 设计理念</p>
-                    <p>随着设备类型的不断增加，传统的响应式设计方法已经不够用了。我们需要考虑更多的因素：用户的网络状况、设备性能、使用场景等。</p>
-                    <p>Container Queries、CSS Grid和现代CSS特性为我们提供了更灵活的布局方案。结合性能监控和自适应加载策略，我们可以为所有用户提供最佳体验。</p>
-                    <a href="#" class="read-more">阅读全文</a>
-                </div>
-            </div>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#101315" />
+    <meta
+      name="description"
+      content="10 万本金，30 个交易日。来韭菜生存记，抽策略卡、闯随机事件、击败电脑对手，玩一场 30 天股神挑战。"
+    />
+    <title>韭菜生存记 · 30 天股神挑战</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="app.mjs"></script>
+  </head>
+  <body>
+    <svg
+      class="svg-library"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <symbol id="i-market" viewBox="0 0 24 24">
+        <path d="M4 19V5m0 14h16M8 14l4-5 4 3 4-7" />
+      </symbol>
+      <symbol id="i-wallet" viewBox="0 0 24 24">
+        <path d="M19 8V5H5a2 2 0 0 0-2 2v12h17V8H5a2 2 0 0 1 0-4" />
+        <path d="M16 12h5v4h-5z" />
+      </symbol>
+      <symbol id="i-history" viewBox="0 0 24 24">
+        <path d="M4 5v5h5M4.5 10a8 8 0 1 1 .5 7M12 7v5l3 2" />
+      </symbol>
+      <symbol id="i-help" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M9.5 9a2.5 2.5 0 0 1 5 .5c0 1.5-2.5 1.5-2.5 3M12 16h.01" />
+      </symbol>
+      <symbol id="i-reset" viewBox="0 0 24 24">
+        <path d="M4 5v5h5M4.5 10a8 8 0 1 1 .5 7" />
+      </symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+      </symbol>
+      <symbol id="i-news" viewBox="0 0 24 24">
+        <path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5" />
+      </symbol>
+      <symbol id="i-cup" viewBox="0 0 24 24">
+        <path
+          d="M8 3h8v7a4 4 0 0 1-8 0zM8 5H4v3a4 4 0 0 0 4 4m8-7h4v3a4 4 0 0 1-4 4M12 14v6m-4 0h8"
+        />
+      </symbol>
+      <symbol id="i-chevron" viewBox="0 0 24 24">
+        <path d="m9 5 7 7-7 7" />
+      </symbol>
+      <symbol id="i-check" viewBox="0 0 24 24">
+        <path d="m5 12 4 4L19 6" />
+      </symbol>
+      <symbol id="i-spark" viewBox="0 0 24 24">
+        <path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z" />
+      </symbol>
+      <symbol id="i-close" viewBox="0 0 24 24">
+        <path d="m6 6 12 12M18 6 6 18" />
+      </symbol>
+    </svg>
+    <aside class="rail" aria-label="主导航">
+      <a class="brand-mark" href="./" aria-label="韭菜生存记首页"
+        ><svg viewBox="0 0 32 32" aria-hidden="true">
+          <path d="M8 24V13m8 11V6m8 18V10" />
+          <circle cx="8" cy="9" r="2" />
+          <circle cx="24" cy="6" r="2" /></svg
+      ></a>
+      <nav class="rail-nav">
+        <button
+          class="nav-button active"
+          data-view="market"
+          aria-label="行情交易"
+          title="行情交易"
+          aria-current="page"
+        >
+          <svg><use href="#i-market" /></svg><span>行情</span>
+        </button>
+        <button
+          class="nav-button"
+          data-view="portfolio"
+          aria-label="我的持仓"
+          title="我的持仓"
+        >
+          <svg><use href="#i-wallet" /></svg><span>持仓</span>
+        </button>
+        <button
+          class="nav-button"
+          data-view="history"
+          aria-label="交易记录"
+          title="交易记录"
+        >
+          <svg><use href="#i-history" /></svg><span>记录</span>
+        </button>
+      </nav>
+      <div class="rail-bottom">
+        <button
+          class="nav-button"
+          id="help-button"
+          aria-label="玩法指南"
+          title="玩法指南"
+        >
+          <svg><use href="#i-help" /></svg><span>指南</span>
+        </button>
+        <div class="avatar" title="模拟交易员">LC</div>
+      </div>
+    </aside>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="wordmark" href="./">韭菜生存记<span>TRADER QUEST</span></a>
+        <div class="top-actions">
+          <button
+            class="sound-button"
+            id="sound-button"
+            aria-label="开启游戏音效"
+            aria-pressed="false"
+          >
+            ♪ <span>音效关</span></button
+          ><span class="simulation"><span></span>挑战进行中</span
+          ><button class="text-button" id="restart-button">
+            <svg><use href="#i-reset" /></svg>新的一局
+          </button>
         </div>
-
-        <footer>
-            <p>&copy; 2025 科技前沿博客 | 使用 Three.js 构建</p>
-        </footer>
-    </div>
-
-    <div class="tech-info">
-        <div>FPS: <span id="fps">60</span></div>
-        <div>粒子数: <span id="particles">5000</span></div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-    <script>
-        // WebGL 兼容性检测
-        function isWebGLAvailable() {
-            try {
-                const canvas = document.createElement('canvas');
-                return !!(window.WebGLRenderingContext &&
-                    (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
-            } catch (e) {
-                return false;
-            }
-        }
-
-        // 如果不支持 WebGL，显示降级提示
-        if (!isWebGLAvailable()) {
-            const container = document.getElementById('canvas-container');
-            container.innerHTML = `
-                <div style="
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    height: 100%;
-                    color: #00ffff;
-                    text-align: center;
-                    padding: 20px;
-                    background: linear-gradient(135deg, #0a0e27 0%, #1a1e3c 100%);
-                ">
-                    <div style="font-size: 80px; margin-bottom: 20px;">🐻</div>
-                    <h2 style="margin-bottom: 10px;">3D 小熊需要 WebGL 支持</h2>
-                    <p style="color: #a0a0a0; max-width: 300px;">
-                        您的浏览器不支持 WebGL。请尝试更新浏览器或使用 Chrome、Firefox、Safari 等现代浏览器访问。
-                    </p>
+      </header>
+      <main>
+        <section class="intro">
+          <div>
+            <div class="eyebrow">A LITTLE LUCK. A LOT OF GUTS.</div>
+            <h1>一局 30 天，逆袭成股神<span>。</span></h1>
+            <p>买卖赚差价，卡牌改命运。隔壁老王的战书，你接不接？</p>
+          </div>
+          <div class="session-control">
+            <div class="day-label">
+              <svg><use href="#i-clock" /></svg>第
+              <strong id="day">01</strong> / 30 个交易日<span
+                id="session-status"
+                >开市中</span
+              >
+            </div>
+            <button class="primary-button" id="next-day">
+              结束今日交易 <svg><use href="#i-chevron" /></svg>
+            </button>
+          </div>
+        </section>
+        <section class="quest-board" aria-label="股神挑战游戏面板">
+          <div class="quest-main">
+            <div class="quest-scene">
+              <div class="quest-copy">
+                <div class="quest-tag">
+                  <span class="small-dot"></span>30 天股神挑战
+                  <span>单人闯关</span>
                 </div>
-            `;
-            // 隐藏技术信息面板
-            document.querySelector('.tech-info').style.display = 'none';
-        }
-
-        // 博客展开/收起功能
-        function toggleBlog() {
-            const section = document.getElementById('blogSection');
-            const content = document.getElementById('blogContent');
-            const btn = document.getElementById('toggleBtn');
-            
-            if (content.classList.contains('hidden')) {
-                content.classList.remove('hidden');
-                section.classList.remove('collapsed');
-                btn.textContent = '−';
-            } else {
-                content.classList.add('hidden');
-                section.classList.add('collapsed');
-                btn.textContent = '+';
-            }
-        }
-
-        // 只有在支持 WebGL 时才初始化 Three.js
-        if (!isWebGLAvailable()) {
-            throw new Error('WebGL not supported');
-        }
-
-        // 场景设置
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 限制最大像素比，提升移动端性能
-        document.getElementById('canvas-container').appendChild(renderer.domElement);
-
-        // 检测是否为移动设备
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
-
-        // 创建小熊模型
-        const bearGroup = new THREE.Group();
-
-        // 小熊的颜色
-        const bearPink = 0xff69b4;
-        const bearBeige = 0xffd7a8;
-        const bearDarkPink = 0x8b1a5a;
-
-        // 声明在动画中需要用到的变量
-        let head, body;
-
-        // 创建材质
-        const createBearMaterial = (color, emissive = color, intensity = 0.3) => {
-            return new THREE.MeshPhongMaterial({
-                color: color,
-                emissive: emissive,
-                emissiveIntensity: intensity,
-                shininess: 30
-            });
-        };
-
-        const createWireMaterial = (color) => {
-            return new THREE.MeshPhongMaterial({
-                color: color,
-                emissive: color,
-                emissiveIntensity: 0.4,
-                wireframe: true,
-                transparent: true,
-                opacity: 0.3
-            });
-        };
-
-        // 头部 - 圆润的球体
-        const headGeometry = new THREE.SphereGeometry(1.2, 32, 32);
-        headGeometry.scale(1, 0.9, 1);
-        head = new THREE.Mesh(headGeometry, createBearMaterial(bearPink));
-        head.position.y = 2.9;
-        bearGroup.add(head);
-
-        // 头部线框效果
-        const headWire = new THREE.Mesh(headGeometry.clone(), createWireMaterial(0x00ffff));
-        head.add(headWire);
-
-        // 左耳
-        const earGeometry = new THREE.SphereGeometry(0.4, 16, 16);
-        const leftEar = new THREE.Mesh(earGeometry, createBearMaterial(bearPink));
-        leftEar.position.set(-0.8, 3.6, -0.2);
-        bearGroup.add(leftEar);
-
-        // 左耳内部（米色）
-        const innerEarGeometry = new THREE.SphereGeometry(0.25, 16, 16);
-        const leftInnerEar = new THREE.Mesh(innerEarGeometry, createBearMaterial(bearBeige));
-        leftInnerEar.position.set(-0.8, 3.6, 0);
-        bearGroup.add(leftInnerEar);
-
-        // 右耳
-        const rightEar = new THREE.Mesh(earGeometry, createBearMaterial(bearPink));
-        rightEar.position.set(0.8, 3.6, -0.2);
-        bearGroup.add(rightEar);
-
-        // 右耳内部
-        const rightInnerEar = new THREE.Mesh(innerEarGeometry, createBearMaterial(bearBeige));
-        rightInnerEar.position.set(0.8, 3.6, 0);
-        bearGroup.add(rightInnerEar);
-
-        // 面部（米色）
-        const faceGeometry = new THREE.SphereGeometry(0.9, 32, 32);
-        faceGeometry.scale(0.95, 0.85, 0.3);
-        const face = new THREE.Mesh(faceGeometry, createBearMaterial(bearBeige));
-        face.position.set(0, 2.7, 0.9);
-        bearGroup.add(face);
-
-        // 眼睛
-        const eyeGeometry = new THREE.SphereGeometry(0.15, 16, 16);
-        const eyeMaterial = createBearMaterial(0xffffff, 0xffffff, 0.5);
-
-        const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-        leftEye.position.set(-0.35, 3.1, 1.05);
-        bearGroup.add(leftEye);
-
-        const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-        rightEye.position.set(0.35, 3.1, 1.05);
-        bearGroup.add(rightEye);
-
-        // 眼珠
-        const pupilGeometry = new THREE.SphereGeometry(0.1, 16, 16);
-        const pupilMaterial = createBearMaterial(0x000000, 0x000000, 0.2);
-
-        const leftPupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
-        leftPupil.position.set(-0.35, 3.1, 1.15);
-        bearGroup.add(leftPupil);
-
-        const rightPupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
-        rightPupil.position.set(0.35, 3.1, 1.15);
-        bearGroup.add(rightPupil);
-
-        // 眼白高光
-        const highlightGeometry = new THREE.SphereGeometry(0.05, 8, 8);
-        const highlightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-
-        const leftHighlight = new THREE.Mesh(highlightGeometry, highlightMaterial);
-        leftHighlight.position.set(-0.32, 3.15, 1.2);
-        bearGroup.add(leftHighlight);
-
-        const rightHighlight = new THREE.Mesh(highlightGeometry, highlightMaterial);
-        rightHighlight.position.set(0.38, 3.15, 1.2);
-        bearGroup.add(rightHighlight);
-
-        // 眉毛
-        const eyebrowGeometry = new THREE.BoxGeometry(0.3, 0.08, 0.08);
-        const eyebrowMaterial = createBearMaterial(bearDarkPink);
-
-        const leftEyebrow = new THREE.Mesh(eyebrowGeometry, eyebrowMaterial);
-        leftEyebrow.position.set(-0.35, 3.35, 1.1);
-        leftEyebrow.rotation.z = -0.2;
-        bearGroup.add(leftEyebrow);
-
-        const rightEyebrow = new THREE.Mesh(eyebrowGeometry, eyebrowMaterial);
-        rightEyebrow.position.set(0.35, 3.35, 1.1);
-        rightEyebrow.rotation.z = 0.2;
-        bearGroup.add(rightEyebrow);
-
-        // 鼻子
-        const noseGeometry = new THREE.SphereGeometry(0.35, 16, 16);
-        noseGeometry.scale(0.8, 0.7, 0.6);
-        const nose = new THREE.Mesh(noseGeometry, createBearMaterial(bearDarkPink));
-        nose.position.set(0, 2.6, 1.15);
-        bearGroup.add(nose);
-
-        // 嘴巴（不开心的表情）
-        const mouthCurve = new THREE.Shape();
-        mouthCurve.moveTo(-0.25, 0);
-        mouthCurve.quadraticCurveTo(0, -0.15, 0.25, 0);
-        const mouthGeometry = new THREE.ShapeGeometry(mouthCurve);
-        const mouthMaterial = new THREE.MeshBasicMaterial({ color: bearDarkPink, side: THREE.DoubleSide });
-        const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
-        mouth.position.set(0, 2.25, 1.1);
-        mouth.rotation.x = Math.PI;
-        bearGroup.add(mouth);
-
-        // 身体
-        const bodyGeometry = new THREE.SphereGeometry(1.3, 32, 32);
-        bodyGeometry.scale(1, 1.2, 0.85);
-        body = new THREE.Mesh(bodyGeometry, createBearMaterial(bearPink));
-        body.position.y = 1.5;
-        bearGroup.add(body);
-
-        // 身体线框
-        const bodyWire = new THREE.Mesh(bodyGeometry.clone(), createWireMaterial(0x00ff88));
-        body.add(bodyWire);
-
-        // 肚子（米色）
-        const bellyGeometry = new THREE.SphereGeometry(0.9, 32, 32);
-        bellyGeometry.scale(0.9, 1, 0.3);
-        const belly = new THREE.Mesh(bellyGeometry, createBearMaterial(bearBeige));
-        belly.position.set(0, 1.5, 0.95);
-        bearGroup.add(belly);
-
-        // 左臂（上臂）- 使用 CapsuleGeometry
-        const armGeometry = new THREE.CapsuleGeometry(0.26, 0.6, 8, 16);
-        const leftUpperArm = new THREE.Mesh(armGeometry, createBearMaterial(bearPink));
-        leftUpperArm.position.set(-1.35, 1.75, 0);
-        leftUpperArm.rotation.z = 0.6;
-        bearGroup.add(leftUpperArm);
-
-        // 右臂（上臂）
-        const rightUpperArm = new THREE.Mesh(armGeometry, createBearMaterial(bearPink));
-        rightUpperArm.position.set(1.35, 1.75, 0);
-        rightUpperArm.rotation.z = -0.6;
-        bearGroup.add(rightUpperArm);
-
-        // 左前臂 - 使用 CapsuleGeometry
-        const forearmGeometry = new THREE.CapsuleGeometry(0.22, 0.5, 8, 16);
-        const leftForearm = new THREE.Mesh(forearmGeometry, createBearMaterial(bearPink));
-        leftForearm.position.set(-1.65, 1.15, 0);
-        leftForearm.rotation.z = 0.3;
-        bearGroup.add(leftForearm);
-
-        // 右前臂
-        const rightForearm = new THREE.Mesh(forearmGeometry, createBearMaterial(bearPink));
-        rightForearm.position.set(1.65, 1.15, 0);
-        rightForearm.rotation.z = -0.3;
-        bearGroup.add(rightForearm);
-
-        // 左手掌
-        const handGeometry = new THREE.SphereGeometry(0.28, 16, 16);
-        const leftHand = new THREE.Mesh(handGeometry, createBearMaterial(bearPink));
-        leftHand.position.set(-1.78, 0.75, 0);
-        bearGroup.add(leftHand);
-
-        // 右手掌
-        const rightHand = new THREE.Mesh(handGeometry, createBearMaterial(bearPink));
-        rightHand.position.set(1.78, 0.75, 0);
-        bearGroup.add(rightHand);
-
-        // 左腿
-        const legGeometry = new THREE.CylinderGeometry(0.35, 0.35, 1, 12);
-        const leftLeg = new THREE.Mesh(legGeometry, createBearMaterial(bearPink));
-        leftLeg.position.set(-0.5, 0, 0);
-        bearGroup.add(leftLeg);
-
-        // 右腿
-        const rightLeg = new THREE.Mesh(legGeometry, createBearMaterial(bearPink));
-        rightLeg.position.set(0.5, 0, 0);
-        bearGroup.add(rightLeg);
-
-        // 左脚
-        const footGeometry = new THREE.SphereGeometry(0.4, 16, 16);
-        footGeometry.scale(0.8, 0.6, 1.2);
-        const leftFoot = new THREE.Mesh(footGeometry, createBearMaterial(bearPink));
-        leftFoot.position.set(-0.5, -0.6, 0.2);
-        bearGroup.add(leftFoot);
-
-        // 左脚掌（米色）
-        const footPadGeometry = new THREE.SphereGeometry(0.3, 16, 16);
-        footPadGeometry.scale(0.8, 0.5, 0.8);
-        const leftFootPad = new THREE.Mesh(footPadGeometry, createBearMaterial(bearBeige));
-        leftFootPad.position.set(-0.5, -0.7, 0.4);
-        bearGroup.add(leftFootPad);
-
-        // 右脚
-        const rightFoot = new THREE.Mesh(footGeometry, createBearMaterial(bearPink));
-        rightFoot.position.set(0.5, -0.6, 0.2);
-        bearGroup.add(rightFoot);
-
-        // 右脚掌
-        const rightFootPad = new THREE.Mesh(footPadGeometry, createBearMaterial(bearBeige));
-        rightFootPad.position.set(0.5, -0.7, 0.4);
-        bearGroup.add(rightFootPad);
-
-        scene.add(bearGroup);
-        bearGroup.position.set(-5, -1.5, 0);
-        
-        // 存储关节引用以便动画
-        const joints = {
-            leftUpperArm, rightUpperArm,
-            leftForearm, rightForearm,
-            leftHand, rightHand,
-            leftLeg, rightLeg,
-            leftEar, rightEar,
-            leftPupil, rightPupil
-        };
-
-        // 粒子系统 - 根据设备性能调整粒子数量
-        const particlesGeometry = new THREE.BufferGeometry();
-        const particlesCount = isMobile ? 1500 : 5000; // 移动端减少粒子数量
-        const posArray = new Float32Array(particlesCount * 3);
-        const colorArray = new Float32Array(particlesCount * 3);
-
-        for (let i = 0; i < particlesCount * 3; i += 3) {
-            posArray[i] = (Math.random() - 0.5) * 50;
-            posArray[i + 1] = (Math.random() - 0.5) * 50;
-            posArray[i + 2] = (Math.random() - 0.5) * 50;
-
-            const colorChoice = Math.random();
-            if (colorChoice < 0.33) {
-                colorArray[i] = 0;
-                colorArray[i + 1] = 1;
-                colorArray[i + 2] = 1;
-            } else if (colorChoice < 0.66) {
-                colorArray[i] = 0;
-                colorArray[i + 1] = 1;
-                colorArray[i + 2] = 0.5;
-            } else {
-                colorArray[i] = 0;
-                colorArray[i + 1] = 0.5;
-                colorArray[i + 2] = 1;
-            }
-        }
-
-        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-        particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colorArray, 3));
-
-        const particlesMaterial = new THREE.PointsMaterial({
-            size: 0.05,
-            vertexColors: true,
-            transparent: true,
-            opacity: 0.8,
-            blending: THREE.AdditiveBlending
-        });
-
-        const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
-        scene.add(particlesMesh);
-
-        // 更新粒子数显示
-        document.getElementById('particles').textContent = particlesCount;
-
-        // 光照
-        const ambientLight = new THREE.AmbientLight(0x404040, 2);
-        scene.add(ambientLight);
-
-        const pointLight1 = new THREE.PointLight(0x00ffff, 2, 50);
-        pointLight1.position.set(10, 10, 10);
-        scene.add(pointLight1);
-
-        const pointLight2 = new THREE.PointLight(0x00ff88, 2, 50);
-        pointLight2.position.set(-10, -10, 10);
-        scene.add(pointLight2);
-
-        camera.position.z = 12;
-        camera.position.x = -2;
-        camera.position.y = 0.5;
-
-        // 鼠标交互
-        let mouseX = 0;
-        let mouseY = 0;
-        let targetRotationY = 0;
-        let targetRotationX = 0;
-        let isMouseOverHuman = false;
-        let mouseClickEffect = 0;
-
-        // 摄像机拖拽控制
-        let isDragging = false;
-        let previousMouseX = 0;
-        let previousMouseY = 0;
-        let cameraAngleX = 0;  // 水平角度
-        let cameraAngleY = 0.05;  // 垂直角度
-        const cameraDistance = 12;
-
-        // 鼠标按下 - 开始拖拽
-        document.addEventListener('mousedown', (event) => {
-            // 检查是否点击在小熊上
-            const testX = (event.clientX / window.innerWidth) * 2 - 1;
-            const testY = -(event.clientY / window.innerHeight) * 2 + 1;
-            const raycaster = new THREE.Raycaster();
-            raycaster.setFromCamera(new THREE.Vector2(testX, testY), camera);
-            const intersects = raycaster.intersectObjects(bearGroup.children, true);
-
-            // 只有不在小熊上点击时才开始拖拽摄像机
-            if (intersects.length === 0) {
-                isDragging = true;
-                previousMouseX = event.clientX;
-                previousMouseY = event.clientY;
-                document.body.style.cursor = 'grabbing';
-            }
-        });
-
-        // 鼠标松开 - 结束拖拽
-        document.addEventListener('mouseup', () => {
-            isDragging = false;
-            if (!isMouseOverHuman) {
-                document.body.style.cursor = 'grab';
-            }
-        });
-
-        // 鼠标移动
-        document.addEventListener('mousemove', (event) => {
-            mouseX = (event.clientX / window.innerWidth) * 2 - 1;
-            mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
-
-            // 如果正在拖拽，更新摄像机角度
-            if (isDragging) {
-                const deltaX = event.clientX - previousMouseX;
-                const deltaY = event.clientY - previousMouseY;
-
-                cameraAngleX -= deltaX * 0.005;
-                cameraAngleY += deltaY * 0.005;
-
-                // 限制垂直角度范围
-                cameraAngleY = Math.max(-0.8, Math.min(0.8, cameraAngleY));
-
-                previousMouseX = event.clientX;
-                previousMouseY = event.clientY;
-            }
-
-            // 计算小熊应该看向的方向
-            const bearScreenPos = bearGroup.position.clone();
-            bearScreenPos.project(camera);
-
-            const dx = mouseX - bearScreenPos.x;
-            const dy = mouseY - bearScreenPos.y;
-
-            targetRotationY = dx * 0.5;
-            targetRotationX = dy * 0.3;
-
-            // 检测鼠标是否在小熊上方
-            const raycaster = new THREE.Raycaster();
-            raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), camera);
-            const intersects = raycaster.intersectObjects(bearGroup.children, true);
-            isMouseOverHuman = intersects.length > 0;
-
-            if (isDragging) {
-                document.body.style.cursor = 'grabbing';
-            } else if (isMouseOverHuman) {
-                document.body.style.cursor = 'pointer';
-            } else {
-                document.body.style.cursor = 'grab';
-            }
-        });
-
-        // 点击/触摸小熊的处理函数
-        function handleBearInteraction(clientX, clientY) {
-            const raycaster = new THREE.Raycaster();
-            const mouse = new THREE.Vector2(
-                (clientX / window.innerWidth) * 2 - 1,
-                -(clientY / window.innerHeight) * 2 + 1
-            );
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(bearGroup.children, true);
-
-            if (intersects.length > 0) {
-                mouseClickEffect = 1;
-
-                // 创建点击波纹效果
-                const rippleGeometry = new THREE.RingGeometry(0.5, 0.7, 32);
-                const rippleMaterial = new THREE.MeshBasicMaterial({
-                    color: 0xff69b4,
-                    transparent: true,
-                    opacity: 0.8,
-                    side: THREE.DoubleSide
-                });
-                const ripple = new THREE.Mesh(rippleGeometry, rippleMaterial);
-                ripple.position.copy(intersects[0].point);
-                ripple.lookAt(camera.position);
-                scene.add(ripple);
-
-                // 波纹动画
-                let rippleScale = 1;
-                const rippleInterval = setInterval(() => {
-                    rippleScale += 0.1;
-                    ripple.scale.set(rippleScale, rippleScale, 1);
-                    rippleMaterial.opacity -= 0.05;
-                    if (rippleMaterial.opacity <= 0) {
-                        scene.remove(ripple);
-                        clearInterval(rippleInterval);
-                    }
-                }, 30);
-                return true;
-            }
-            return false;
-        }
-
-        // 鼠标点击 - 小熊会"挥手"
-        document.addEventListener('click', (event) => {
-            handleBearInteraction(event.clientX, event.clientY);
-        });
-
-        // ========== 移动端触摸事件支持 ==========
-        let touchStartX = 0;
-        let touchStartY = 0;
-        let isTouchDragging = false;
-
-        // 触摸开始
-        document.addEventListener('touchstart', (event) => {
-            const touch = event.touches[0];
-            touchStartX = touch.clientX;
-            touchStartY = touch.clientY;
-
-            // 检查是否点击在小熊上
-            const testX = (touch.clientX / window.innerWidth) * 2 - 1;
-            const testY = -(touch.clientY / window.innerHeight) * 2 + 1;
-            const raycaster = new THREE.Raycaster();
-            raycaster.setFromCamera(new THREE.Vector2(testX, testY), camera);
-            const intersects = raycaster.intersectObjects(bearGroup.children, true);
-
-            if (intersects.length === 0) {
-                isTouchDragging = true;
-                previousMouseX = touch.clientX;
-                previousMouseY = touch.clientY;
-            }
-        }, { passive: true });
-
-        // 触摸移动
-        document.addEventListener('touchmove', (event) => {
-            const touch = event.touches[0];
-            mouseX = (touch.clientX / window.innerWidth) * 2 - 1;
-            mouseY = -(touch.clientY / window.innerHeight) * 2 + 1;
-
-            // 如果正在拖拽，更新摄像机角度
-            if (isTouchDragging) {
-                const deltaX = touch.clientX - previousMouseX;
-                const deltaY = touch.clientY - previousMouseY;
-
-                cameraAngleX -= deltaX * 0.008;
-                cameraAngleY += deltaY * 0.008;
-
-                // 限制垂直角度范围
-                cameraAngleY = Math.max(-0.8, Math.min(0.8, cameraAngleY));
-
-                previousMouseX = touch.clientX;
-                previousMouseY = touch.clientY;
-            }
-
-            // 计算小熊应该看向的方向
-            const bearScreenPos = bearGroup.position.clone();
-            bearScreenPos.project(camera);
-
-            const dx = mouseX - bearScreenPos.x;
-            const dy = mouseY - bearScreenPos.y;
-
-            targetRotationY = dx * 0.5;
-            targetRotationX = dy * 0.3;
-        }, { passive: true });
-
-        // 触摸结束
-        document.addEventListener('touchend', (event) => {
-            const touch = event.changedTouches[0];
-            const deltaX = Math.abs(touch.clientX - touchStartX);
-            const deltaY = Math.abs(touch.clientY - touchStartY);
-
-            // 如果移动距离很小，视为点击
-            if (deltaX < 10 && deltaY < 10) {
-                handleBearInteraction(touch.clientX, touch.clientY);
-            }
-
-            isTouchDragging = false;
-        }, { passive: true });
-
-        // FPS计数器
-        let lastTime = Date.now();
-        let frames = 0;
-
-        // 动画循环
-        function animate() {
-            requestAnimationFrame(animate);
-
-            const time = Date.now() * 0.001;
-
-            // 小熊头部跟随鼠标（平滑过渡）
-            head.rotation.y += (targetRotationY * 0.8 - head.rotation.y) * 0.05;
-            head.rotation.x += (targetRotationX * 0.5 - head.rotation.x) * 0.05;
-
-            // 眼珠跟随头部转动
-            joints.leftPupil.position.x = -0.35 + targetRotationY * 0.1;
-            joints.rightPupil.position.x = 0.35 + targetRotationY * 0.1;
-            joints.leftPupil.position.y = 3.1 - targetRotationX * 0.1;
-            joints.rightPupil.position.y = 3.1 - targetRotationX * 0.1;
-
-            // 耳朵轻微摆动
-            joints.leftEar.rotation.z = Math.sin(time * 2) * 0.1;
-            joints.rightEar.rotation.z = -Math.sin(time * 2) * 0.1;
-
-            // 鼠标悬停时的反应
-            if (isMouseOverHuman) {
-                // 整体轻微放大
-                bearGroup.scale.x += (1.15 - bearGroup.scale.x) * 0.1;
-                bearGroup.scale.y += (1.15 - bearGroup.scale.y) * 0.1;
-                bearGroup.scale.z += (1.15 - bearGroup.scale.z) * 0.1;
-                
-                // 发光增强
-                head.material.emissiveIntensity = 0.5;
-                body.material.emissiveIntensity = 0.4;
-            } else {
-                // 恢复正常大小
-                bearGroup.scale.x += (1.0 - bearGroup.scale.x) * 0.1;
-                bearGroup.scale.y += (1.0 - bearGroup.scale.y) * 0.1;
-                bearGroup.scale.z += (1.0 - bearGroup.scale.z) * 0.1;
-                
-                // 恢复正常发光
-                head.material.emissiveIntensity += (0.3 - head.material.emissiveIntensity) * 0.1;
-                body.material.emissiveIntensity += (0.3 - body.material.emissiveIntensity) * 0.1;
-            }
-
-            // 点击后的挥手动画
-            if (mouseClickEffect > 0) {
-                joints.rightUpperArm.rotation.z = -0.6 - Math.sin(mouseClickEffect * 10) * 0.6;
-                joints.rightForearm.rotation.z = -0.3 - Math.sin(mouseClickEffect * 10) * 0.4;
-                joints.rightHand.position.y = 0.75 + Math.sin(mouseClickEffect * 12) * 0.15;
-
-                mouseClickEffect -= 0.02;
-                if (mouseClickEffect < 0) mouseClickEffect = 0;
-            } else {
-                // 正常的手臂摆动（幅度小，保持连贯）
-                joints.leftUpperArm.rotation.z = 0.6 + Math.sin(time * 0.6) * 0.08;
-                joints.rightUpperArm.rotation.z = -0.6 - Math.sin(time * 0.6) * 0.08;
-
-                joints.leftForearm.rotation.z = 0.3 + Math.sin(time * 0.8) * 0.05;
-                joints.rightForearm.rotation.z = -0.3 - Math.sin(time * 0.8) * 0.05;
-
-                // 手部细微摆动
-                joints.leftHand.position.y = 0.75 + Math.sin(time * 1.2) * 0.04;
-                joints.rightHand.position.y = 0.75 - Math.sin(time * 1.2) * 0.04;
-            }
-
-            // 身体缓慢旋转（但会受鼠标影响）
-            const baseRotation = Math.sin(time * 0.2) * 0.2;
-            bearGroup.rotation.y += (baseRotation - bearGroup.rotation.y) * 0.05;
-            
-            // 身体上下浮动（呼吸效果）
-            bearGroup.position.y = -1.5 + Math.sin(time * 0.8) * 0.25;
-
-            // 身体轻微前后倾斜
-            bearGroup.rotation.x += (Math.sin(time * 0.5) * 0.04 - bearGroup.rotation.x) * 0.05;
-
-            // 腿部轻微摆动
-            joints.leftLeg.rotation.x = Math.sin(time * 0.5) * 0.05;
-            joints.rightLeg.rotation.x = -Math.sin(time * 0.5) * 0.05;
-
-            // 粒子旋转
-            particlesMesh.rotation.y += 0.0003;
-            particlesMesh.rotation.x += 0.0001;
-
-            // 相机围绕小熊旋转
-            const targetCameraX = bearGroup.position.x + Math.sin(cameraAngleX) * cameraDistance;
-            const targetCameraZ = Math.cos(cameraAngleX) * cameraDistance;
-            const targetCameraY = bearGroup.position.y + Math.sin(cameraAngleY) * cameraDistance * 0.5;
-
-            camera.position.x += (targetCameraX - camera.position.x) * 0.08;
-            camera.position.z += (targetCameraZ - camera.position.z) * 0.08;
-            camera.position.y += (targetCameraY - camera.position.y) * 0.08;
-            camera.lookAt(bearGroup.position);
-
-            // 光源动态移动
-            pointLight1.position.x = Math.sin(time * 0.7) * 8;
-            pointLight1.position.z = Math.cos(time * 0.7) * 8;
-            pointLight1.position.y = Math.sin(time * 0.5) * 3 + 5;
-
-            pointLight2.position.x = Math.cos(time * 0.6) * 8;
-            pointLight2.position.z = Math.sin(time * 0.6) * 8;
-
-            renderer.render(scene, camera);
-
-            // 更新FPS
-            frames++;
-            const currentTime = Date.now();
-            if (currentTime - lastTime >= 1000) {
-                document.getElementById('fps').textContent = frames;
-                frames = 0;
-                lastTime = currentTime;
-            }
-        }
-
-        // 响应式处理
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
-        // 初始化相机朝向
-        camera.lookAt(bearGroup.position);
-
-        animate();
-    </script>
-</body>
+                <h2>开局十万，<br />结局由你<span>操盘。</span></h2>
+                <p>在市场里生存，在事件中翻盘。</p>
+                <div class="player-badge">
+                  <span class="player-pixel">LC</span>
+                  <div>
+                    <strong id="trader-rank">新手小散</strong
+                    ><span id="player-status"
+                      >你的第一桶金，就从这里开始。</span
+                    >
+                  </div>
+                </div>
+              </div>
+              <div class="mascot-scene">
+                <span class="speech-bubble" id="mascot-speech"
+                  >别慌，先来一手。</span
+                ><img
+                  src="mascot.svg"
+                  alt="戴墨镜的小牛交易员，正坐在电脑前操盘"
+                  width="320"
+                  height="240"
+                />
+              </div>
+            </div>
+            <div
+              class="quest-route"
+              id="quest-route"
+              aria-label="关卡进度"
+            ></div>
+          </div>
+          <aside class="rival-panel">
+            <div class="rival-heading">
+              <h2>这条街，谁最会赚？</h2>
+              <span>本局电脑对手</span>
+            </div>
+            <div id="rival-list"></div>
+            <div class="rival-taunt" id="rival-taunt">
+              老王：“小伙子，市场可不讲人情。”
+            </div>
+          </aside>
+        </section>
+        <section class="strategy-section" aria-label="策略卡背包">
+          <div class="strategy-heading">
+            <div>
+              <svg><use href="#i-spark" /></svg>
+              <h2>你的底牌</h2>
+              <span>选好股票，再用一张卡改变战局</span>
+            </div>
+            <div class="strategy-meta">
+              <button id="report-button" class="subtle-button" hidden>
+                昨日战报</button
+              ><button id="achievement-button" class="subtle-button">
+                成就 0/4</button
+              ><span id="card-count">4 张可用</span>
+            </div>
+          </div>
+          <div class="strategy-deck" id="strategy-deck"></div>
+          <div id="active-effects" class="active-effects" hidden></div>
+        </section>
+        <section class="account-grid" aria-label="账户概况">
+          <article class="account-card total-card">
+            <div class="metric-label">总资产 <span>CNY</span></div>
+            <div class="metric-value" id="total-assets">
+              100,000<span>.00</span>
+            </div>
+            <div class="metric-foot">起始本金 <span>¥100,000.00</span></div>
+            <svg class="asset-spark" viewBox="0 0 160 44" aria-hidden="true">
+              <path id="equity-spark" d="M0 32H160" />
+            </svg>
+          </article>
+          <article class="account-card">
+            <div class="metric-label">
+              累计盈亏 <svg><use href="#i-market" /></svg>
+            </div>
+            <div class="metric-value" id="total-profit">+0<span>.00</span></div>
+            <div class="metric-foot">
+              <span class="neutral-pill" id="return-rate">+0.00%</span
+              ><span>本轮收益率</span>
+            </div>
+          </article>
+          <article class="account-card">
+            <div class="metric-label">
+              可用资金 <svg><use href="#i-wallet" /></svg>
+            </div>
+            <div class="metric-value" id="cash">100,000<span>.00</span></div>
+            <div class="metric-foot">让每一分本金，都有自己的打算。</div>
+          </article>
+          <article class="account-card">
+            <div class="metric-label">
+              持仓市值 <span id="position-count">0 只股票</span>
+            </div>
+            <div class="metric-value" id="position-value">
+              0<span>.00</span>
+            </div>
+            <div class="metric-foot position-foot">
+              <div class="position-meter"><i id="position-meter"></i></div>
+              <span id="position-rate">仓位 0%</span>
+            </div>
+          </article>
+        </section>
+        <div id="market-view" class="view">
+          <section class="terminal" aria-label="模拟交易终端">
+            <aside class="watchlist">
+              <div class="panel-heading">
+                <h2>自选行情</h2>
+                <span>6 只</span>
+              </div>
+              <div class="watchlist-columns">
+                <span>名称 / 代码</span><span>最新 / 涨跌</span>
+              </div>
+              <div id="stock-list"></div>
+              <div class="watchlist-note">
+                <span class="small-dot"></span>虚构股票 · 每日收盘价成交
+              </div>
+            </aside>
+            <section class="chart-panel">
+              <div class="stock-heading">
+                <div class="stock-title">
+                  <span class="stock-avatar" id="stock-avatar">星</span>
+                  <div>
+                    <h2 id="stock-name">星河科技</h2>
+                    <div class="stock-sub">
+                      <span id="stock-code">688001</span
+                      ><span class="sector-tag" id="stock-sector"
+                        >人工智能</span
+                      >
+                    </div>
+                  </div>
+                </div>
+                <div class="stock-quote">
+                  <strong id="stock-price">68.80</strong
+                  ><span id="stock-change">+0.00%</span>
+                </div>
+              </div>
+              <div class="chart-toolbar">
+                <div class="segmented" id="chart-tabs" aria-label="图表类型">
+                  <button
+                    data-chart="candles"
+                    class="selected"
+                    aria-pressed="true"
+                  >
+                    日 K</button
+                  ><button data-chart="line" aria-pressed="false">走势</button>
+                </div>
+                <div class="chart-legend">
+                  <span><i class="legend-dot ma5"></i>MA5</span
+                  ><span><i class="legend-dot ma10"></i>MA10</span
+                  ><span class="history-label">含 39 日历史行情</span>
+                </div>
+              </div>
+              <div class="chart-ohlc" id="chart-ohlc"></div>
+              <div class="chart-wrap">
+                <canvas
+                  id="price-chart"
+                  role="img"
+                  aria-label="所选股票的历史价格与成交量图"
+                ></canvas>
+                <div id="chart-tooltip" class="chart-tooltip" hidden></div>
+              </div>
+              <div class="quote-details">
+                <span>今开 <b id="quote-open"></b></span
+                ><span>最高 <b id="quote-high"></b></span
+                ><span>最低 <b id="quote-low"></b></span
+                ><span>成交量 <b id="quote-volume"></b></span>
+              </div>
+            </section>
+            <aside class="order-panel">
+              <div class="panel-heading">
+                <h2>交易下单</h2>
+                <span class="tag">T+1</span>
+              </div>
+              <div class="order-tabs" aria-label="买卖方向">
+                <button id="buy-tab" class="selected" aria-pressed="true">
+                  买入</button
+                ><button id="sell-tab" aria-pressed="false">卖出</button>
+              </div>
+              <div class="order-symbol">
+                <span id="order-name">星河科技</span
+                ><span id="order-code">688001</span>
+              </div>
+              <div class="order-price-row">
+                <span>委托价格</span><span class="market-price">市价成交</span>
+              </div>
+              <div class="price-display">
+                <span>¥</span><strong id="order-price">68.80</strong
+                ><span>CNY</span>
+              </div>
+              <label class="quantity-label" for="quantity"
+                >委托数量 <span>100 股 / 手</span></label
+              >
+              <div class="quantity-control">
+                <button id="decrease" aria-label="减少 100 股">−</button
+                ><input
+                  id="quantity"
+                  type="number"
+                  min="100"
+                  step="100"
+                  value="100"
+                  inputmode="numeric"
+                  aria-describedby="available-shares"
+                /><button id="increase" aria-label="增加 100 股">+</button>
+              </div>
+              <div class="quantity-presets">
+                <button data-fraction="0.25">1/4 仓</button
+                ><button data-fraction="0.5">半仓</button
+                ><button data-fraction="1">全仓</button>
+              </div>
+              <div class="available" id="available-shares">可买 0 股</div>
+              <div class="order-summary">
+                <div>
+                  <span>预估金额</span><strong id="order-value">¥0.00</strong>
+                </div>
+                <div>
+                  <span
+                    >交易手续费
+                    <button
+                      class="inline-info"
+                      id="fee-help"
+                      aria-label="查看手续费规则"
+                    >
+                      ⓘ
+                    </button></span
+                  ><span id="order-fee">¥5.00</span>
+                </div>
+              </div>
+              <button class="trade-button" id="trade-button">
+                买入 100 股
+              </button>
+              <p class="order-note">
+                <svg><use href="#i-help" /></svg>当日买入，下一交易日可卖出
+              </p>
+            </aside>
+          </section>
+          <section class="bottom-grid">
+            <article class="news-panel">
+              <div class="section-label">
+                <svg><use href="#i-news" /></svg>
+                <h2>市场情报</h2>
+                <span>影响下一交易日</span>
+              </div>
+              <div class="news-content">
+                <span class="news-day" id="news-day">DAY 01</span>
+                <div>
+                  <div class="news-headline">
+                    <span id="news-tag">产业动向</span>
+                    <h3 id="news-title"></h3>
+                  </div>
+                  <p id="news-body"></p>
+                </div>
+              </div>
+              <div class="news-footer">
+                <span id="news-sectors"></span
+                ><span>消息只是线索，涨跌仍有随机性</span>
+              </div>
+            </article>
+            <article class="challenge-panel">
+              <div class="section-label">
+                <svg><use href="#i-cup" /></svg>
+                <h2>本轮挑战</h2>
+                <span>THE CHALLENGE</span>
+              </div>
+              <div class="challenge-description">
+                <div>
+                  <h3>从小散，到股神。</h3>
+                  <p>30 天内，让总资产达到 <b>¥150,000</b></p>
+                </div>
+                <div class="target-mark">+50<span>%</span></div>
+              </div>
+              <div class="challenge-progress">
+                <i id="challenge-progress"></i>
+              </div>
+              <div class="challenge-footer">
+                <span id="challenge-status">本金已就位，故事由你来写。</span
+                ><button class="subtle-button" id="rules-button">
+                  玩法指南 <svg><use href="#i-chevron" /></svg>
+                </button>
+              </div>
+            </article>
+          </section>
+        </div>
+        <section id="portfolio-view" class="view data-view" hidden>
+          <div class="data-view-heading">
+            <div>
+              <span class="eyebrow">YOUR PORTFOLIO</span>
+              <h2>我的持仓</h2>
+              <p>看懂每一笔浮盈，也接纳每一次波动。</p>
+            </div>
+            <button class="secondary-button" data-return-market>
+              回到交易
+            </button>
+          </div>
+          <div id="portfolio-content"></div>
+        </section>
+        <section id="history-view" class="view data-view" hidden>
+          <div class="data-view-heading">
+            <div>
+              <span class="eyebrow">TRADE JOURNAL</span>
+              <h2>交易记录</h2>
+              <p>每一次判断，都值得复盘。</p>
+            </div>
+            <button class="secondary-button" data-return-market>
+              回到交易
+            </button>
+          </div>
+          <div id="history-content"></div>
+        </section>
+        <footer>
+          <span
+            ><b>TRADER QUEST</b> 认真玩，轻松赚。<span class="footer-divider"
+              >/</span
+            >当然，也可能亏。</span
+          ><span>纯属模拟 · 虚构行情 · 快乐第一</span>
+        </footer>
+      </main>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+    <button class="mobile-advance" id="mobile-next-day">
+      <svg><use href="#i-clock" /></svg><span>收盘 · 抽事件</span>
+    </button>
+    <div id="confetti" class="confetti" aria-hidden="true"></div>
+    <dialog id="achievements-dialog" class="modal">
+      <button class="modal-close" data-close aria-label="关闭成就">
+        <svg><use href="#i-close" /></svg></button
+      ><span class="eyebrow">LITTLE WINS. BIG MOVES.</span>
+      <h2>把每一步，变成勋章。</h2>
+      <p>每个成就限领一次，策略卡奖励自动到账。</p>
+      <div id="achievements-content"></div>
+    </dialog>
+    <dialog id="card-dialog" class="modal card-modal">
+      <button class="modal-close" data-close aria-label="关闭策略卡">
+        <svg><use href="#i-close" /></svg>
+      </button>
+      <div class="big-card-icon" id="card-modal-icon"></div>
+      <span class="eyebrow">PLAY YOUR WILD CARD</span>
+      <h2 id="card-modal-title"></h2>
+      <p id="card-modal-description"></p>
+      <div class="card-target" id="card-modal-target"></div>
+      <p class="card-warning">策略卡属于游戏技能，与真实市场规则无关。</p>
+      <button class="primary-button modal-primary" id="confirm-card">
+        使用这张卡
+      </button>
+    </dialog>
+    <dialog id="encounter-dialog" class="modal encounter-modal">
+      <button class="modal-close" data-close aria-label="返回交易">
+        <svg><use href="#i-close" /></svg>
+      </button>
+      <div class="event-tag" id="event-tag">隔夜事件 · 老王的战书</div>
+      <div class="event-portrait">王<span>!</span></div>
+      <h2 id="encounter-title"></h2>
+      <p id="encounter-description"></p>
+      <div class="event-reward">
+        <span>猜中净赚 <strong id="event-reward"></strong></span
+        ><span>猜错损失 <strong id="event-stake"></strong></span>
+      </div>
+      <div class="encounter-options">
+        <button data-choice="long">
+          <span class="option-icon">↗</span>
+          <div><strong>看涨，接下战书</strong><span>相信自己的判断</span></div>
+          <svg><use href="#i-chevron" /></svg></button
+        ><button data-choice="short">
+          <span class="option-icon">↘</span>
+          <div>
+            <strong>看跌，反手出击</strong><span>人多的地方，我不去</span>
+          </div>
+          <svg><use href="#i-chevron" /></svg></button
+        ><button data-choice="pass" class="pass-option">
+          <div>
+            <strong>不接招，直接进入明天</strong
+            ><span>不收取挑战金，无事件奖金</span>
+          </div>
+          <svg><use href="#i-chevron" /></svg>
+        </button>
+      </div>
+      <p class="encounter-cash" id="encounter-cash"></p>
+    </dialog>
+    <dialog id="day-dialog" class="modal day-modal">
+      <span class="eyebrow" id="report-day">NEW DAY UNLOCKED</span>
+      <div class="report-verdict" id="report-verdict"></div>
+      <h2 id="report-headline"></h2>
+      <div class="report-profit" id="report-profit"></div>
+      <p class="report-profit-label">隔夜资产变化</p>
+      <div class="report-details" id="report-details"></div>
+      <div class="report-rewards" id="report-rewards" hidden></div>
+      <div class="report-taunt" id="report-taunt"></div>
+      <button class="primary-button modal-primary" id="continue-day">
+        继续操盘
+      </button>
+    </dialog>
+    <dialog id="help-dialog" class="modal">
+      <button class="modal-close" data-close aria-label="关闭玩法指南">
+        <svg><use href="#i-close" /></svg></button
+      ><span class="eyebrow">WELCOME TO THE MARKET</span>
+      <h2>第一笔交易，从这里开始。</h2>
+      <p class="modal-intro">
+        给你 10 万虚拟本金，30 天冲刺 15 万，顺手击败这条街的电脑对手。
+      </p>
+      <div class="rules-list">
+        <div>
+          <span>01</span>
+          <div>
+            <h3>选一只股票，做一次判断</h3>
+            <p>
+              6
+              只虚构股票，各有不同波动。看行情、买股票，完成成就还能获得策略卡。
+            </p>
+          </div>
+        </div>
+        <div>
+          <span>02</span>
+          <div>
+            <h3>下单，再迎接明天</h3>
+            <p>
+              每笔至少 100 股，按当日收盘价成交，手续费 0.03%（最低 5
+              元）。收盘时可接下老王的涨跌挑战：猜对拿奖金，猜错损失挑战金，也可免费跳过。
+            </p>
+          </div>
+        </div>
+        <div>
+          <span>03</span>
+          <div>
+            <h3>抽到好牌，学会用牌</h3>
+            <p>
+              先知雷达可透视明日涨跌，金钟罩抵挡一半持仓损失，牛市号角给所选股票加成。每张卡都会消耗，闯过第
+              5 / 10 / 20 天获得补给。
+            </p>
+          </div>
+        </div>
+        <div>
+          <span>04</span>
+          <div>
+            <h3>第 30 天，看看你的战绩</h3>
+            <p>
+              总资产包含现金和持仓。实行
+              T+1，今日买入次日可卖。策略卡与奖金都是游戏机制；电脑对手不是在线玩家。浏览器会自动存档。
+            </p>
+          </div>
+        </div>
+      </div>
+      <button class="primary-button modal-primary" data-close>
+        明白了，去交易
+      </button>
+    </dialog>
+    <dialog id="restart-dialog" class="modal compact-modal">
+      <span class="eyebrow">A FRESH START</span>
+      <h2>市场，总有下一次机会。</h2>
+      <p>开启新一局将清空本轮持仓和交易记录，历史最佳收益会保留。</p>
+      <div class="modal-actions">
+        <button class="secondary-button" data-close>继续本轮</button
+        ><button class="primary-button" id="confirm-restart">开始新一局</button>
+      </div>
+    </dialog>
+    <dialog id="result-dialog" class="modal result-modal">
+      <button class="modal-close" data-close aria-label="关闭结算">
+        <svg><use href="#i-close" /></svg>
+      </button>
+      <div class="result-cup">
+        <svg><use href="#i-cup" /></svg>
+      </div>
+      <span class="eyebrow">30 DAYS. YOUR STORY.</span>
+      <h2 id="result-title"></h2>
+      <p id="result-description"></p>
+      <div class="result-assets-label">最终总资产</div>
+      <div id="result-assets" class="result-assets"></div>
+      <div class="result-stats">
+        <div><span>累计收益</span><strong id="result-return"></strong></div>
+        <div>
+          <span>最大日终回撤</span><strong id="result-drawdown"></strong>
+        </div>
+        <div><span>交易笔数</span><strong id="result-trades"></strong></div>
+      </div>
+      <p class="personal-best" id="personal-best"></p>
+      <button class="primary-button modal-primary" id="play-again">
+        再开一局</button
+      ><button class="subtle-button result-review" data-close>
+        留在这里，复盘交易
+      </button>
+    </dialog>
+    <noscript
+      ><p class="noscript">请启用 JavaScript 后体验炒股小游戏。</p></noscript
+    >
+  </body>
 </html>
