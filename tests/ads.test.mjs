@@ -10,7 +10,7 @@ const configured = {
   homepageSlotId: "1234567890",
 };
 
-function browser(hostname = "lc-one.cn") {
+function browser(hostname = "lc-one.cn", existingSdk = null) {
   const elements = [];
   const content = { append: (element) => elements.push(element) };
   const container = {
@@ -20,7 +20,7 @@ function browser(hostname = "lc-one.cn") {
   };
   const scripts = [];
   const document = {
-    querySelector: () => container,
+    querySelector: (selector) => selector === "[data-home-ad]" ? container : existingSdk,
     createElement: (tag) => ({ tag, style: {}, dataset: {} }),
     head: { append: (script) => scripts.push(script) },
   };
@@ -28,7 +28,7 @@ function browser(hostname = "lc-one.cn") {
   return { document, window, container, elements, scripts };
 }
 
-test("unconfigured ads make no external requests and leave no blank slot", () => {
+test("an unconfigured manual slot makes no additional requests and leaves no blank slot", () => {
   const env = browser();
   validateAdsConfig(current);
   assert.equal(mountHomepageAd({ ...env, config: { enabled: false, publisherId: "", homepageSlotId: "" } }), false);
@@ -46,7 +46,7 @@ test("invalid and incomplete ad identifiers fail before any SDK loads", () => {
   assert.equal(adsTxt(configured), "google.com, pub-1234567890123456, DIRECT, f08c47fec0942fa0\n");
 });
 
-test("localhost and preview deployments never request live ads", () => {
+test("the manual loader never requests live ads on localhost or preview hosts", () => {
   for (const host of ["localhost", "127.0.0.1", "lc-one.pages.dev", "lc-one.cn.example.com"]) {
     const env = browser(host);
     assert.equal(mountHomepageAd({ ...env, config: configured }), false);
@@ -73,6 +73,14 @@ test("one homepage slot loads one responsive ad without duplicate requests", () 
   assert.equal(env.scripts.length, 1);
 });
 
+test("the manual slot reuses the Auto ads SDK instead of loading it twice", () => {
+  const sdk = { addEventListener() {} };
+  const env = browser("lc-one.cn", sdk);
+  assert.equal(mountHomepageAd({ ...env, config: configured }), true);
+  assert.equal(env.scripts.length, 0);
+  assert.deepEqual(env.window.adsbygoogle, [{}]);
+});
+
 test("blocked SDK, rejected rendering and unfilled ads collapse the container", () => {
   const blocked = browser();
   mountHomepageAd({ ...blocked, config: configured });
@@ -97,12 +105,18 @@ test("blocked SDK, rejected rendering and unfilled ads collapse the container", 
   assert.equal(disconnected, true);
 });
 
-test("ad loader is limited to the lobby and its slot follows both game cards", async () => {
+test("the manual slot follows both cards and Auto ads use one async tag per page", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   assert.ok(html.indexOf("data-home-ad") > html.indexOf("</ul>"));
   assert.equal((html.match(/data-home-ad/g) || []).length, 1);
-  for (const game of ["trader-quest", "bull-run"]) {
-    const page = await readFile(new URL(`../games/${game}/index.html`, import.meta.url), "utf8");
-    assert.doesNotMatch(page, /home-ad\.mjs|adsbygoogle/);
+  for (const file of ["index.html", "games/trader-quest/index.html", "games/bull-run/index.html"]) {
+    const page = await readFile(new URL(`../${file}`, import.meta.url), "utf8");
+    const tags = [...page.matchAll(/<script\b[^>]+adsbygoogle\.js[^>]*>/g)];
+    assert.equal(tags.length, 1);
+    assert.match(tags[0][0], /\basync\b/);
+    assert.match(tags[0][0], new RegExp(`client=${current.publisherId}`));
+    assert.match(tags[0][0], /crossorigin="anonymous"/);
+    assert.ok(page.indexOf(tags[0][0]) < page.indexOf("</head>"));
+    if (file !== "index.html") assert.doesNotMatch(page, /home-ad\.mjs/);
   }
 });

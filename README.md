@@ -49,21 +49,17 @@ npm run build
 
 测试覆盖交易规则、策略卡、事件奖惩、存档恢复，以及主页的两个入口、各页面资源路径、游戏返回入口、完整文案覆盖、语言记忆和切换时的进度保留；也检查广告关闭、配置校验、预览环境隔离、重复加载及广告失败时的收起行为。构建先在临时目录准备完整站点，再替换 `dist/`，避免遗留旧根目录下的游戏文件。
 
-## 首页广告
+## 广告
 
-首页两个游戏卡片下方预留一个自适应横幅，标注「广告 / Advertisement」。广告未配置、被拦截或返回无填充时收起广告区域。游戏页面不加载广告 SDK。代码不触发自动刷新，不配置自动广告、插屏或激励广告。
+首页和两款游戏页面的 `<head>` 已加入用户提供的异步 AdSense 自动广告脚本，发布商 ID 为 `ca-pub-1021389829087686`，每页只加载一次。自动广告的开关、投放量、格式和排除区域由 AdSense 后台管理；脚本接入不保证每次访问都有广告。隐私说明位于 `/privacy/`，支持中英文。
 
-当前 `shared/ads-config.mjs` 默认关闭，未填写任何账号标识；此状态不向 Google 发出广告请求。正式启用需要维护者自己的 AdSense 账号和广告位：
+`shared/ads-config.mjs` 中的 `enabled` **仅控制额外的手动首页广告位**，当前为 `false`、`homepageSlotId` 留空，不会影响自动广告。首页两个游戏卡片下方的手动广告区域继续隐藏。手动广告加载器会复用已有的自动广告 SDK，避免重复加载；当前不需要提供 `data-ad-slot`。
 
-1. 在 AdSense「网站」中添加 `lc-one.cn`。将发布商 ID（`ca-pub-` 后跟 16 位数字）填入 `publisherId`，保持 `enabled: false` 后发布。构建会在首页生成 `google-adsense-account` 验证标签，并在 `/ads.txt` 写入该账号的授权记录，可以在审核前完成站点所有权验证。
-2. 网站审核通过后，在「广告 → 按广告单元 → 展示广告」创建一个自适应广告单元，例如 `lc-one-home-bottom`。将代码中的 `data-ad-slot` 填入 `homepageSlotId`。这两个标识是公开广告参数，不是密码或 API 密钥。
-3. 在 AdSense 后台关闭该网站的自动广告，防止平台额外插入广告；在「隐私权和消息」配置并发布适用地区的 Google 同意消息，隐私政策地址填 `https://lc-one.cn/privacy/`。隐私说明需随实际广告供应商、消息设置和数据处理方式同步维护。
-4. 将 `enabled` 改为 `true`，运行检查、测试和构建后按现有流程发布。加载器仅在正式主机 `lc-one.cn` 运行，localhost、Pages 预览域名不请求真实广告。
-5. 在 AdSense 按广告单元观察展示量、覆盖率、Page RPM 和收入。正式广告不要自行点击；测试加载和失败场景使用本地模拟 SDK。
+构建保留首页的 `google-adsense-account` 验证标签，并在 `/ads.txt` 写入该发布商的授权记录。AdSense「隐私权和消息」使用的隐私政策地址为 `https://lc-one.cn/privacy/`；隐私说明需随实际广告供应商、消息设置和数据处理方式同步维护。
 
-未取得真实账号 ID 前不会生成虚假的 ads.txt 授权。关闭广告可将 `enabled` 改回 `false`；如需同时移除所有权标识和 ads.txt，再清空两个 ID 并重新发布。
+广告脚本现已存在于源码 HTML 中，本地 HTTP 预览也可能请求广告。自动化检查只核对脚本配置和模拟加载器，不打开或点击真实广告。关闭自动广告需在 AdSense 后台停用，或移除三个页面中的 SDK 标签后重新发布；修改手动广告位的 `enabled` 不会关闭自动广告。
 
-官方资料：[创建展示广告单元](https://support.google.com/adsense/answer/9274025)、[自适应广告参数](https://support.google.com/adsense/answer/9183460)、[ads.txt](https://support.google.com/adsense/answer/12171612)、[隐私披露内容](https://support.google.com/adsense/answer/1348695)、[Google 同意消息](https://support.google.com/adsense/answer/10960768)。
+官方资料：[设置自动广告](https://support.google.com/adsense/answer/9261307)、[ads.txt](https://support.google.com/adsense/answer/12171612)、[隐私披露内容](https://support.google.com/adsense/answer/1348695)、[Google 同意消息](https://support.google.com/adsense/answer/10960768)。
 
 ## 目录
 
@@ -75,12 +71,12 @@ games/trader-quest/          韭菜生存记源码及角色素材
 games/bull-run/              牛市闯关源码
 scripts/build.mjs           静态发布构建
 shared/                     共用语言偏好、英文文案和切换控件
-shared/ads-config.mjs        AdSense 公开参数及开关（默认关闭）
+shared/ads-config.mjs        AdSense 公开参数及手动首页广告位开关
 privacy/                    中英文隐私说明
 tests/                      游戏规则、站点集成和双语检查
 ```
 
-页面使用原生 HTML / CSS / JavaScript，素材随站点发布，无需外部字体或图片服务。仅在正式启用广告时，首页异步加载 Google AdSense 脚本。
+页面使用原生 HTML / CSS / JavaScript，素材随站点发布，无需外部字体或图片服务。首页和两款游戏页面异步加载 Google AdSense 自动广告脚本。
 
 ## 部署
 

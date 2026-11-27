@@ -17,7 +17,7 @@ export function adsTxt(config) {
     : "";
 }
 
-// One manually placed homepage ad. No auto refresh, in-game ads or local traffic.
+// Optional manual homepage ad; independent of the static Auto ads tags.
 export function mountHomepageAd({ config, document, window }) {
   validateAdsConfig(config);
   if (!config.enabled || window.location.hostname !== "lc-one.cn") return false;
@@ -44,18 +44,26 @@ export function mountHomepageAd({ config, document, window }) {
     });
     observer.observe(unit, { attributes: true, attributeFilter: ["data-ad-status"] });
   }
-  const script = document.createElement("script");
-  script.async = true;
-  script.crossOrigin = "anonymous";
-  script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${config.publisherId}`;
-  script.onerror = hide;
-  script.onload = () => {
+  const requestAd = () => {
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
     } catch {
       hide();
     }
   };
+  const existing = document.querySelector('script[src^="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"]');
+  if (existing) {
+    existing.addEventListener("error", hide, { once: true });
+    // The standard AdSense queue works before or after the async tag loads.
+    requestAd();
+    return true;
+  }
+  const script = document.createElement("script");
+  script.async = true;
+  script.crossOrigin = "anonymous";
+  script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${config.publisherId}`;
+  script.onerror = hide;
+  script.onload = requestAd;
   document.head.append(script);
   return true;
 }
